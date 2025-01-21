@@ -12,10 +12,6 @@
 
 #define BUTTON_MOD XCB_MOD_MASK_4
 
-char *terminal[] = {"kitty", NULL};
-char *browser[] = {"firefox", NULL};
-char *launcher[] = {"rofi", "-show", "drun", NULL};
-
 keybind_t keybinds[] = {
 	{XK_t, SUPER, spawnclient, "kitty"},
 	{XK_f, SUPER, spawnclient, "firefox"},
