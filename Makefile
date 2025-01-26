@@ -1,6 +1,6 @@
 CC=gcc
 
-LIBS = -lxcb -lxcb-util -lxcb-keysyms -lxkbcommon -lxcb-cursor 
+LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor 
 
 BINDIR = /usr/bin
 

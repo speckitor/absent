@@ -1,3 +1,4 @@
+#include <xcb/xcb.h>
 void client_create(state_t *s, xcb_window_t wid) {
   xcb_map_window(s->c, wid);
 
@@ -44,6 +45,34 @@ void client_create(state_t *s, xcb_window_t wid) {
 	} else if (!s->focus){
 		xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
 	}
+}
+
+void client_kill(state_t *s, client_t *cl) {
+  int has_del_atom = 0;
+  xcb_icccm_get_wm_protocols_reply_t reply;
+  if (xcb_icccm_get_wm_protocols_reply(s->c, xcb_icccm_get_wm_protocols_unchecked(s->c, cl->wid, s->wm_protocols_atom), &reply, NULL)) {
+    for (int i = 0; i < reply.atoms_len; i++) {
+      if (reply.atoms[i] == s->wm_delete_window_atom) {
+        has_del_atom = 1;
+        break;
+      }
+    }
+    xcb_icccm_get_wm_protocols_reply_wipe(&reply);
+  }
+
+  if (has_del_atom) {
+    xcb_client_message_event_t e;
+    e.response_type = XCB_CLIENT_MESSAGE;
+    e.window = cl->wid;
+    e.format = 32;
+    e.type = s->wm_protocols_atom;
+    e.data.data32[0] = s->wm_delete_window_atom;
+    e.data.data32[1] = XCB_TIME_CURRENT_TIME;
+    xcb_send_event(s->c, 0, cl->wid, XCB_EVENT_MASK_NO_EVENT, (const char*)&e);
+  } else {
+    xcb_kill_client(s->c, cl->wid);
+  }
+  xcb_flush(s->c);
 }
 
 void client_remove(state_t *s, client_t *cl) {

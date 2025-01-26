@@ -1,12 +1,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <xcb/xcb.h>
 #include <X11/keysym.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xcb_util.h>
+#include <xcb/xcb_icccm.h>
 #include <xcb/xproto.h>
 #include <xkbcommon/xkbcommon.h>
 #include <xcb/xcb_cursor.h>
@@ -40,6 +42,16 @@ void setup(state_t *s) {
 	s->m->root_x = 0;
 	s->m->root_y = 0;
 	s->m->resizingcorner = CORNER_NONE;
+
+  xcb_intern_atom_reply_t* prot_reply = xcb_intern_atom_reply(s->c, xcb_intern_atom(s->c, 0, strlen("WM_PROTOCOLS"), "WM_PROTOCOLS"), NULL);
+  s->wm_protocols_atom = prot_reply->atom;
+  free(prot_reply);
+
+  xcb_intern_atom_reply_t* del_reply = xcb_intern_atom_reply(s->c, xcb_intern_atom(s->c, 0, strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW"), NULL);
+  s->wm_delete_window_atom = del_reply->atom;
+  free(del_reply);
+
+  xcb_flush(s->c);
 
 	size_t length = sizeof(keybinds) / sizeof(keybinds[0]);
   for (int i = 0; i < length; i++) {

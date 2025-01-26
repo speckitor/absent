@@ -44,6 +44,9 @@ struct state_t {
 	xcb_screen_t *screen;
 	xcb_window_t root;
 
+  xcb_atom_t wm_protocols_atom;
+  xcb_atom_t wm_delete_window_atom;
+
 	client_t* clients;
 	client_t* focus;
 

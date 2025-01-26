@@ -7,8 +7,7 @@ void spawnclient(state_t *s, const char *command) {
 
 void killclient(state_t *s, const char *command) {
 	if (s->focus) {
-  	xcb_kill_client(s->c, s->focus->wid);
-  	xcb_flush(s->c);
+    client_kill(s, s->focus);
 	}
 }
 
