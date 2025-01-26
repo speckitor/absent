@@ -76,6 +76,13 @@ void setup(state_t *s) {
 
 	xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
 
+  if (ENABLE_AUTOSTART) {
+    if (fork() == 0) {
+      execl("/bin/sh", "sh", "-c", "autostartabsent", (char *) NULL);
+      _exit(EXIT_FAILURE);
+    }
+  }
+
   xcb_flush(s->c);
 }
 

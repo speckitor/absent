@@ -12,6 +12,10 @@
 
 #define BUTTON_MOD XCB_MOD_MASK_4
 
+// enable autostart script running (autostartabsent)
+// 1 for enable, 0 for disable
+#define ENABLE_AUTOSTART 1
+
 keybind_t keybinds[] = {
 	{XK_t, SUPER, spawnclient, "kitty"},
 	{XK_f, SUPER, spawnclient, "firefox"},

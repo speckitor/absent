@@ -1,0 +1,4 @@
+xrandr --output HDMI-1 --mode 1920x1080 --rate 144 &
+setxkbmap -layout "us,ru" -option "grp:win_space_toggle" &
+nitrogen --restore &
+picom --experimental-backends
