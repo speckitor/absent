@@ -4,7 +4,7 @@ LIBS = -lxcb -lxcb-util -lxcb-keysyms -lxkbcommon -lxcb-cursor
 
 BINDIR = /usr/bin
 SOURCE_FILE = absent.desktop
-DESTINATION_DIR = /usr/share/xsessions/
+DESTINATION_DIR = /usr/share/xsessions
 
 all: copy install
 
@@ -16,4 +16,4 @@ install: absent.c
 
 clean:
 	rm -f $(BINDIR)/absent
-
+	rm -f $(DESTINATION_DIR)/absent.desktop
