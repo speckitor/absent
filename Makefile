@@ -1,4 +1,5 @@
-CC=gcc
+CC = ccache gcc
+CFLAGS = -O2 -Wall -Wextra
 
 LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor 
 
@@ -14,9 +15,11 @@ copy:
 	cp $(START_FILE) $(BINDIR)
 
 install: absent.c
-	$(CC) -o $(BINDIR)/absent absent.c $(LIBS)
+	$(CC) $(CFLAGS) -o $(BINDIR)/absent absent.c $(LIBS)
 
 clean:
 	rm -f $(BINDIR)/absent
 	rm -f $(DESTINATION_DIR)/$(SESSION_FILE)
 	rm -f $(BINDIR)/$(START_FILE)
+
+.PHONY: all copy install clean
