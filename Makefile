@@ -1,5 +1,5 @@
 CC = ccache gcc
-CFLAGS = -O2 -Wall -Wextra
+CFLAGS = -march=native -funroll-loops -flto -O3 -Wall -Wextra
 
 LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor 
 
