@@ -74,6 +74,10 @@ void setup(state_t *s) {
 	};
 	xcb_change_window_attributes_checked(s->c, s->root, XCB_CW_EVENT_MASK, value_list);
 
+  value_list[0] = s->screen->black_pixel;
+
+  xcb_change_window_attributes(s->c, s->root, XCB_CW_BACK_PIXEL, value_list);
+
 	xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
 
   if (ENABLE_AUTOSTART) {
