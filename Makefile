@@ -1,22 +1,23 @@
-CC=gcc
+CC = gcc
+CFLAGS = -march=native -O3 -ffast-math -flto -fno-exceptions -funroll-loops 
 
 LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor 
 
-BINDIR = /usr/bin
+BIN_DIR = /usr/bin
 START_FILE = autostartabsent
 SESSION_FILE = absent.desktop
-DESTINATION_DIR = /usr/share/xsessions
+SESSION_DIR = /usr/share/xsessions
 
 all: copy install
 
 copy:
-	cp $(SESSION_FILE) $(DESTINATION_DIR)
-	cp $(START_FILE) $(BINDIR)
+	cp $(SESSION_FILE) $(SESSION_DIR)
+	cp $(START_FILE) $(BIN_DIR)
 
 install: absent.c
-	$(CC) -o $(BINDIR)/absent absent.c $(LIBS)
+	$(CC) -o $(BIN_DIR)/absent absent.c $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f $(BINDIR)/absent
-	rm -f $(DESTINATION_DIR)/$(SESSION_FILE)
-	rm -f $(BINDIR)/$(START_FILE)
+	rm -f $(BIN_DIR)/absent
+	rm -f $(SESSION_DIR)/$(SESSION_FILE)
+	rm -f $(BIN_DIR)/$(START_FILE)
