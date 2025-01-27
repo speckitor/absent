@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -14,6 +13,7 @@
 #include <xcb/xcb_cursor.h>
 
 #include "types.h"
+#include "absent.h"
 #include "events.h"
 #include "clients.h"
 #include "keycallbacks.h"
@@ -95,9 +95,9 @@ void clean(state_t *s) {
 	
 	client_t *cl = s->clients;
 	client_t *next;
+
 	while (cl) {
 		next = cl->next;
-		free(cl);
 		cl = next;
 	}
 }

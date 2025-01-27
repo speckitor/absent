@@ -53,5 +53,3 @@ struct state_t {
 	float lastmotiontime;
 	mouse_t *m;
 };
-
-void clean(state_t *s);
