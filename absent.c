@@ -98,6 +98,7 @@ void clean(state_t *s) {
 
 	while (cl) {
 		next = cl->next;
+    free(cl);
 		cl = next;
 	}
 }
