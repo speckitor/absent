@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -march=native -O3 -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra
+CFLAGS = -march=native -O3 -ffast-math -lto -pgo -fno-exceptions -funroll-loops -Wall -Wextra
 LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor 
 
 BIN_DIR = /usr/bin
