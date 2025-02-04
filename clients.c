@@ -1,8 +1,11 @@
 #include <stdlib.h>
+#include <xcb/xcb.h>
 #include <xcb/xcb_icccm.h>
+#include <xcb/xproto.h>
 
 #include "clients.h"
 #include "config.h"
+#include "events.h"
 
 void client_create(state_t *s, xcb_window_t wid) {
   xcb_map_window(s->c, wid);
@@ -13,7 +16,7 @@ void client_create(state_t *s, xcb_window_t wid) {
   xcb_configure_window(s->c, wid, XCB_CONFIG_WINDOW_BORDER_WIDTH, value_list);
 
   value_list[0] = UNFOCUSED_BORDER_COLOR;
-  value_list[1] = XCB_EVENT_MASK_ENTER_WINDOW;
+  value_list[1] = XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_FOCUS_CHANGE;
   xcb_change_window_attributes(
       s->c, wid, XCB_CW_BORDER_PIXEL | XCB_CW_EVENT_MASK, value_list);
 
@@ -51,6 +54,11 @@ void client_create(state_t *s, xcb_window_t wid) {
 
   if (client_contains_cursor(s, cl) || !s->focus) {
     client_focus(s, cl);
+  } else if (s->focus) {
+    client_focus(s, s->focus);
+  } else {
+    xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root,
+                        XCB_CURRENT_TIME);
   }
 }
 
@@ -248,8 +256,6 @@ void client_unfocus(state_t *s) {
   uint32_t value_list[] = {UNFOCUSED_BORDER_COLOR};
   xcb_change_window_attributes(s->c, s->focus->wid, XCB_CW_BORDER_PIXEL,
                                value_list);
-  xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root,
-                      XCB_CURRENT_TIME);
   xcb_flush(s->c);
 
   s->focus = NULL;
@@ -264,13 +270,13 @@ void client_focus(state_t *s, client_t *cl) {
     client_unfocus(s);
   }
 
-  uint32_t value_list[] = {FOCUSED_BORDER_COLOR};
-  xcb_change_window_attributes(s->c, cl->wid, XCB_CW_BORDER_PIXEL, value_list);
+  s->focus = cl;
   xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, cl->wid,
                       XCB_CURRENT_TIME);
+  send_event(s, cl, s->wm_take_focus_atom);
+  uint32_t value_list[] = {FOCUSED_BORDER_COLOR};
+  xcb_change_window_attributes(s->c, cl->wid, XCB_CW_BORDER_PIXEL, value_list);
   xcb_flush(s->c);
-
-  s->focus = cl;
 }
 
 int client_contains_cursor(state_t *s, client_t *cl) {

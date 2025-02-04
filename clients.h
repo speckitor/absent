@@ -5,8 +5,6 @@
 
 #include "types.h"
 
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
-
 void client_create(state_t *s, xcb_window_t wid);
 void client_kill(state_t *s, client_t *cl);
 void client_remove(state_t *s, client_t *cl);

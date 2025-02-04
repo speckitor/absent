@@ -3,6 +3,9 @@
 
 #include <xcb/xcb.h>
 
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
 typedef struct state_t state_t;
 
 typedef void (*keycallback_t)(state_t *s, const char *command);
@@ -51,6 +54,7 @@ struct state_t {
 
   xcb_atom_t wm_protocols_atom;
   xcb_atom_t wm_delete_window_atom;
+  xcb_atom_t wm_take_focus_atom;
 
   client_t *clients;
   client_t *focus;

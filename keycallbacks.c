@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <unistd.h>
-#include <xcb/xproto.h>
 
 #include "absent.h"
 #include "clients.h"

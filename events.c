@@ -1,6 +1,10 @@
+#include <stdio.h>
 #include <stdlib.h>
 
+#include <xcb/xcb.h>
 #include <xcb/xcb_event.h>
+#include <xcb/xcb_icccm.h>
+#include <xcb/xproto.h>
 
 #include "clients.h"
 #include "config.h"
@@ -55,15 +59,8 @@ void configure_request(state_t *s, xcb_generic_event_t *ev) {
   int i = 0;
 
   client_t *cl = client_from_wid(s, e->window);
-  if (cl != NULL) {
-    if (e->value_mask & XCB_CONFIG_WINDOW_X)
-      cl->x = e->x;
-    if (e->value_mask & XCB_CONFIG_WINDOW_Y)
-      cl->y = e->y;
-    if (e->value_mask & XCB_CONFIG_WINDOW_WIDTH)
-      cl->width = e->width;
-    if (e->value_mask & XCB_CONFIG_WINDOW_HEIGHT)
-      cl->height = e->height;
+  if (cl) {
+    return;
   }
 
   if (e->value_mask & XCB_CONFIG_WINDOW_X) {
@@ -119,6 +116,11 @@ void key_press(state_t *s, xcb_generic_event_t *ev) {
     if (key_cmp(s, keybinds[i], e->detail, e->state)) {
       keybinds[i].callback(s, keybinds[i].command);
     }
+  }
+
+  if (!s->focus && e->child != e->root) {
+    client_t *cl = client_from_wid(s, e->child);
+    client_focus(s, cl);
   }
 }
 
@@ -190,4 +192,32 @@ void enter_notify(state_t *s, xcb_generic_event_t *ev) {
   client_t *cl = client_from_wid(s, e->event);
 
   client_focus(s, cl);
+}
+
+void send_event(state_t *s, client_t *cl, xcb_atom_t protocol) {
+  int has_prot;
+  xcb_icccm_get_wm_protocols_reply_t reply;
+
+  if (xcb_icccm_get_wm_protocols_reply(
+          s->c, xcb_icccm_get_wm_protocols(s->c, cl->wid, protocol), &reply,
+          NULL)) {
+    for (int i = 0; i < reply.atoms_len; i++) {
+      if (reply.atoms[i] == protocol) {
+        has_prot = 1;
+        break;
+      }
+    }
+    xcb_icccm_get_wm_protocols_reply_wipe(&reply);
+  }
+
+  if (has_prot) {
+    xcb_client_message_event_t e;
+    e.response_type = XCB_CLIENT_MESSAGE;
+    e.window = cl->wid;
+    e.format = 32;
+    e.type = s->wm_protocols_atom;
+    e.data.data32[0] = protocol;
+    e.data.data32[1] = XCB_TIME_CURRENT_TIME;
+    xcb_send_event(s->c, 0, cl->wid, XCB_EVENT_MASK_NO_EVENT, (const char *)&e);
+  }
 }

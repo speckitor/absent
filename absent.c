@@ -42,6 +42,12 @@ void setup(state_t *s) {
   s->wm_delete_window_atom = del_reply->atom;
   free(del_reply);
 
+  xcb_intern_atom_reply_t *focus_reply = xcb_intern_atom_reply(
+      s->c, xcb_intern_atom(s->c, 0, strlen("WM_TAKE_FOCUS"), "WM_TAKE_FOCUS"),
+      NULL);
+  s->wm_take_focus_atom = focus_reply->atom;
+  free(focus_reply);
+
   xcb_flush(s->c);
 
   size_t length = sizeof(keybinds) / sizeof(keybinds[0]);
