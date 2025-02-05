@@ -10,6 +10,7 @@
 #include "config.h"
 #include "events.h"
 #include "keys.h"
+#include "monitors.h"
 
 void setup(state_t *s) {
   s->c = xcb_connect(NULL, NULL);
@@ -22,12 +23,15 @@ void setup(state_t *s) {
   s->clients = NULL;
   s->focus = NULL;
 
+  s->monitors = NULL;
+  s->monitor_focus = NULL;
+
   s->lastmotiontime = 0.0;
-  s->m = calloc(1, sizeof(mouse_t));
-  s->m->pressed_button = 0;
-  s->m->root_x = 0;
-  s->m->root_y = 0;
-  s->m->resizingcorner = CORNER_NONE;
+  s->mouse = calloc(1, sizeof(mouse_t));
+  s->mouse->pressed_button = 0;
+  s->mouse->root_x = 0;
+  s->mouse->root_y = 0;
+  s->mouse->resizingcorner = CORNER_NONE;
 
   xcb_intern_atom_reply_t *prot_reply = xcb_intern_atom_reply(
       s->c, xcb_intern_atom(s->c, 0, strlen("WM_PROTOCOLS"), "WM_PROTOCOLS"),
@@ -65,9 +69,9 @@ void setup(state_t *s) {
   xcb_change_window_attributes(s->c, s->root, XCB_CW_CURSOR, &cursor);
   xcb_cursor_context_free(ctx);
 
-  uint32_t value_list[] = {XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
-                           XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-                           XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY};
+  uint32_t value_list[] = {
+      XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+      XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_POINTER_MOTION};
   xcb_change_window_attributes_checked(s->c, s->root, XCB_CW_EVENT_MASK,
                                        value_list);
 
@@ -85,11 +89,13 @@ void setup(state_t *s) {
     }
   }
 
+  monitors_setup(s);
+
   xcb_flush(s->c);
 }
 
 void clean(state_t *s) {
-  free(s->m);
+  free(s->mouse);
 
   client_t *cl = s->clients;
   client_t *next;
@@ -98,6 +104,15 @@ void clean(state_t *s) {
     next = cl->next;
     free(cl);
     cl = next;
+  }
+
+  monitor_t *monitors = s->monitors;
+  monitor_t *next_monitor;
+
+  while (monitors) {
+    next_monitor = monitors->next;
+    free(monitors);
+    monitors = next_monitor;
   }
 }
 

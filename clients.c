@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <stdlib.h>
+
 #include <xcb/xcb.h>
 #include <xcb/xcb_icccm.h>
 #include <xcb/xproto.h>
@@ -6,22 +8,50 @@
 #include "clients.h"
 #include "config.h"
 #include "events.h"
+#include "monitors.h"
 
 void client_create(state_t *s, xcb_window_t wid) {
   xcb_map_window(s->c, wid);
 
-  uint32_t value_list[2];
+  if (!s->monitor_focus) {
+    s->monitor_focus = monitor_contains_cursor(s);
+  }
+  xcb_get_geometry_reply_t *attrs =
+      xcb_get_geometry_reply(s->c, xcb_get_geometry(s->c, wid), NULL);
 
-  value_list[0] = BORDER_WIDTH;
-  xcb_configure_window(s->c, wid, XCB_CONFIG_WINDOW_BORDER_WIDTH, value_list);
+  client_t *cl = calloc(1, sizeof(client_t));
+
+  cl->wid = wid;
+
+  cl->x = s->monitor_focus->x;
+  cl->y = s->monitor_focus->y;
+  cl->width = 500;
+  cl->height = 500;
+
+  cl->fullscreen = 0;
+
+  cl->monitor = s->monitor_focus;
+
+  cl->next = s->clients;
+
+  s->clients = cl;
+
+  uint32_t value_list[5];
+  uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
+                        XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
+                        XCB_CONFIG_WINDOW_BORDER_WIDTH;
+
+  value_list[0] = cl->x;
+  value_list[1] = cl->y;
+  value_list[2] = cl->width;
+  value_list[3] = cl->height;
+  value_list[4] = BORDER_WIDTH;
+  xcb_configure_window(s->c, wid, value_mask, value_list);
 
   value_list[0] = UNFOCUSED_BORDER_COLOR;
   value_list[1] = XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_FOCUS_CHANGE;
   xcb_change_window_attributes(
       s->c, wid, XCB_CW_BORDER_PIXEL | XCB_CW_EVENT_MASK, value_list);
-
-  xcb_get_geometry_reply_t *attrs =
-      xcb_get_geometry_reply(s->c, xcb_get_geometry(s->c, wid), NULL);
 
   xcb_grab_button(s->c, 0, wid,
                   XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
@@ -36,22 +66,6 @@ void client_create(state_t *s, xcb_window_t wid) {
 
   xcb_flush(s->c);
 
-  if (!attrs) {
-    return;
-  }
-
-  client_t *cl = calloc(1, sizeof(client_t));
-
-  cl->wid = wid;
-  cl->x = attrs->x;
-  cl->y = attrs->y;
-  cl->width = attrs->width;
-  cl->height = attrs->height;
-  cl->fullscreen = 0;
-  cl->next = s->clients;
-
-  s->clients = cl;
-
   if (client_contains_cursor(s, cl) || !s->focus) {
     client_focus(s, cl);
   } else if (s->focus) {
@@ -60,6 +74,20 @@ void client_create(state_t *s, xcb_window_t wid) {
     xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root,
                         XCB_CURRENT_TIME);
   }
+
+  FILE *fptr;
+
+  fptr = fopen("/home/spectr/abs.log", "w");
+
+  client_t *cls = s->clients;
+
+  while (cls) {
+    printf("%d %d;\n", cls->x, cls->y);
+
+    cls = cls->next;
+  }
+
+  fclose(fptr);
 }
 
 void client_kill(state_t *s, client_t *cl) {
@@ -95,7 +123,7 @@ void client_kill(state_t *s, client_t *cl) {
   xcb_flush(s->c);
 }
 
-void client_remove(state_t *s, client_t *cl) {
+void client_remove(state_t *s, xcb_window_t wid) {
   client_t *clients = s->clients;
   client_t **prev = &s->clients;
 
@@ -104,9 +132,9 @@ void client_remove(state_t *s, client_t *cl) {
   }
 
   while (clients) {
-    if (clients->wid == cl->wid) {
-      *prev = cl->next;
-      free(cl);
+    if (clients->wid == wid) {
+      *prev = clients->next;
+      free(clients);
       return;
     }
     prev = &clients->next;
@@ -134,26 +162,28 @@ void client_move(state_t *s, client_t *cl, int x, int y) {
 
   cl->x = x;
   cl->y = y;
+
+  cl->monitor = monitor_contains_cursor(s);
 }
 
 void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e) {
   int half_window_width = cl->width / 2;
   int half_window_height = cl->height / 2;
 
-  int relative_x = s->m->root_x - cl->x;
-  int relative_y = s->m->root_y - cl->y;
+  int relative_x = s->mouse->root_x - cl->x;
+  int relative_y = s->mouse->root_y - cl->y;
 
-  if (s->m->resizingcorner == CORNER_NONE) {
+  if (s->mouse->resizingcorner == CORNER_NONE) {
     if (relative_x >= half_window_width && relative_y >= half_window_height) {
-      s->m->resizingcorner = BOTTOM_RIGHT;
+      s->mouse->resizingcorner = BOTTOM_RIGHT;
     } else if (relative_x >= half_window_width &&
                relative_y < half_window_height) {
-      s->m->resizingcorner = TOP_RIGHT;
+      s->mouse->resizingcorner = TOP_RIGHT;
     } else if (relative_x < half_window_width &&
                relative_y >= half_window_height) {
-      s->m->resizingcorner = BOTTOM_LEFT;
+      s->mouse->resizingcorner = BOTTOM_LEFT;
     } else {
-      s->m->resizingcorner = TOP_LEFT;
+      s->mouse->resizingcorner = TOP_LEFT;
     }
   }
 
@@ -161,10 +191,10 @@ void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e) {
 
   uint32_t value_mask;
   uint32_t value_list[4];
-  switch (s->m->resizingcorner) {
+  switch (s->mouse->resizingcorner) {
   case BOTTOM_RIGHT:
-    new_width = cl->width + (e->root_x - s->m->root_x);
-    new_height = cl->height + (e->root_y - s->m->root_y);
+    new_width = cl->width + (e->root_x - s->mouse->root_x);
+    new_height = cl->height + (e->root_y - s->mouse->root_y);
 
     new_width = new_width > MIN_WIDTH ? new_width : MIN_WIDTH;
     new_height = new_height > MIN_HEIGHT ? new_height : MIN_HEIGHT;
@@ -178,9 +208,9 @@ void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e) {
     xcb_configure_window(s->c, cl->wid, value_mask, value_list);
     break;
   case TOP_RIGHT:
-    new_width = cl->width + (e->root_x - s->m->root_x);
-    new_height = cl->height - (e->root_y - s->m->root_y);
-    new_y = cl->y + (e->root_y - s->m->root_y);
+    new_width = cl->width + (e->root_x - s->mouse->root_x);
+    new_height = cl->height - (e->root_y - s->mouse->root_y);
+    new_y = cl->y + (e->root_y - s->mouse->root_y);
 
     new_width = new_width > MIN_WIDTH ? new_width : MIN_WIDTH;
     new_height = new_height > MIN_HEIGHT ? new_height : MIN_HEIGHT;
@@ -198,9 +228,9 @@ void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e) {
     xcb_configure_window(s->c, cl->wid, value_mask, value_list);
     break;
   case BOTTOM_LEFT:
-    new_width = cl->width - (e->root_x - s->m->root_x);
-    new_height = cl->height + (e->root_y - s->m->root_y);
-    new_x = cl->x + (e->root_x - s->m->root_x);
+    new_width = cl->width - (e->root_x - s->mouse->root_x);
+    new_height = cl->height + (e->root_y - s->mouse->root_y);
+    new_x = cl->x + (e->root_x - s->mouse->root_x);
 
     new_width = new_width > MIN_WIDTH ? new_width : MIN_WIDTH;
     new_height = new_height > MIN_HEIGHT ? new_height : MIN_HEIGHT;
@@ -218,10 +248,10 @@ void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e) {
     xcb_configure_window(s->c, cl->wid, value_mask, value_list);
     break;
   case TOP_LEFT:
-    new_width = cl->width - (e->root_x - s->m->root_x);
-    new_height = cl->height - (e->root_y - s->m->root_y);
-    new_x = cl->x + (e->root_x - s->m->root_x);
-    new_y = cl->y + (e->root_y - s->m->root_y);
+    new_width = cl->width - (e->root_x - s->mouse->root_x);
+    new_height = cl->height - (e->root_y - s->mouse->root_y);
+    new_x = cl->x + (e->root_x - s->mouse->root_x);
+    new_y = cl->y + (e->root_y - s->mouse->root_y);
 
     new_width = new_width > MIN_WIDTH ? new_width : MIN_WIDTH;
     new_height = new_height > MIN_HEIGHT ? new_height : MIN_HEIGHT;
@@ -270,6 +300,7 @@ void client_focus(state_t *s, client_t *cl) {
     client_unfocus(s);
   }
 
+  s->monitor_focus = cl->monitor;
   s->focus = cl;
   xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, cl->wid,
                       XCB_CURRENT_TIME);

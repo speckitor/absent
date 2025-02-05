@@ -17,17 +17,26 @@ typedef struct {
   const char *command;
 } keybind_t;
 
+typedef struct monitor_t monitor_t;
+
+struct monitor_t {
+  int x, y;
+  int width, height;
+
+  monitor_t *next;
+};
+
 typedef struct client_t client_t;
 
 struct client_t {
   xcb_window_t wid;
 
-  int x;
-  int y;
-  int width;
-  int height;
+  int x, y;
+  int width, height;
 
   int fullscreen;
+
+  monitor_t *monitor;
 
   client_t *next;
 };
@@ -59,8 +68,11 @@ struct state_t {
   client_t *clients;
   client_t *focus;
 
+  monitor_t *monitors;
+  monitor_t *monitor_focus;
+
   float lastmotiontime;
-  mouse_t *m;
+  mouse_t *mouse;
 };
 
 #endif

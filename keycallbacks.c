@@ -96,8 +96,9 @@ void fullscreen(state_t *s, const char *command) {
     uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
                           XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
                           XCB_CONFIG_WINDOW_BORDER_WIDTH;
-    uint32_t value_list[] = {0, 0, s->screen->width_in_pixels,
-                             s->screen->height_in_pixels, 0};
+    uint32_t value_list[] = {s->focus->monitor->x, s->focus->monitor->y,
+                             s->focus->monitor->width,
+                             s->focus->monitor->height, 0};
     xcb_configure_window(s->c, s->focus->wid, value_mask, value_list);
     xcb_flush(s->c);
     s->focus->fullscreen = 1;
