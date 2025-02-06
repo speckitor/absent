@@ -6,9 +6,6 @@
 #include "keycallbackfuncs.h"
 #include "types.h"
 
-#define MIN_WIDTH 300
-#define MIN_HEIGHT 150
-
 #define BORDER_WIDTH 3
 #define FOCUSED_BORDER_COLOR 0xf38ba8
 #define UNFOCUSED_BORDER_COLOR 0x9399b2

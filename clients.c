@@ -13,9 +13,8 @@
 void client_create(state_t *s, xcb_window_t wid) {
   xcb_map_window(s->c, wid);
 
-  if (!s->monitor_focus) {
-    s->monitor_focus = monitor_contains_cursor(s);
-  }
+  s->monitor_focus = monitor_contains_cursor(s);
+
   xcb_get_geometry_reply_t *attrs =
       xcb_get_geometry_reply(s->c, xcb_get_geometry(s->c, wid), NULL);
 
@@ -23,24 +22,23 @@ void client_create(state_t *s, xcb_window_t wid) {
 
   cl->wid = wid;
 
-  cl->x = s->monitor_focus->x;
-  cl->y = s->monitor_focus->y;
-  cl->width = 500;
-  cl->height = 500;
-
   cl->fullscreen = 0;
 
   cl->monitor = s->monitor_focus;
 
   cl->next = s->clients;
-
   s->clients = cl;
+
+  client_set_size_hints(s, cl);
+  cl->width = attrs->width;
+  cl->height = attrs->height;
+  cl->x = s->monitor_focus->x + (s->monitor_focus->width - cl->width) / 2;
+  cl->y = s->monitor_focus->y + (s->monitor_focus->height - cl->height) / 2;
 
   uint32_t value_list[5];
   uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
                         XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
                         XCB_CONFIG_WINDOW_BORDER_WIDTH;
-
   value_list[0] = cl->x;
   value_list[1] = cl->y;
   value_list[2] = cl->width;
@@ -64,8 +62,6 @@ void client_create(state_t *s, xcb_window_t wid) {
                   XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, s->root, XCB_NONE,
                   3, BUTTON_MOD);
 
-  xcb_flush(s->c);
-
   if (client_contains_cursor(s, cl) || !s->focus) {
     client_focus(s, cl);
   } else if (s->focus) {
@@ -75,19 +71,37 @@ void client_create(state_t *s, xcb_window_t wid) {
                         XCB_CURRENT_TIME);
   }
 
-  FILE *fptr;
+  xcb_flush(s->c);
+}
 
-  fptr = fopen("/home/spectr/abs.log", "w");
+void client_set_size_hints(state_t *s, client_t *cl) {
+  xcb_size_hints_t size_hints;
 
-  client_t *cls = s->clients;
+  xcb_get_property_cookie_t cookie =
+      xcb_icccm_get_wm_normal_hints(s->c, cl->wid);
 
-  while (cls) {
-    printf("%d %d;\n", cls->x, cls->y);
+  if (xcb_icccm_get_wm_normal_hints_reply(s->c, cookie, &size_hints, NULL)) {
+    if (size_hints.flags & XCB_ICCCM_SIZE_HINT_P_MIN_SIZE) {
+      cl->size_hints.min_width = size_hints.min_width;
+      cl->size_hints.min_height = size_hints.min_height;
+    } else {
+      cl->size_hints.min_width = 50;
+      cl->size_hints.min_height = 50;
+    }
 
-    cls = cls->next;
+    if (size_hints.flags & XCB_ICCCM_SIZE_HINT_P_MAX_SIZE) {
+      cl->size_hints.max_width = size_hints.max_width;
+      cl->size_hints.max_height = size_hints.max_height;
+    } else {
+      cl->size_hints.max_width = 10000;
+      cl->size_hints.max_height = 10000;
+    }
+  } else {
+    cl->size_hints.min_width = 50;
+    cl->size_hints.min_height = 50;
+    cl->size_hints.max_width = 10000;
+    cl->size_hints.max_height = 10000;
   }
-
-  fclose(fptr);
 }
 
 void client_kill(state_t *s, client_t *cl) {
@@ -166,6 +180,33 @@ void client_move(state_t *s, client_t *cl, int x, int y) {
   cl->monitor = monitor_contains_cursor(s);
 }
 
+void client_apply_size(state_t *s, client_t *cl, int x, int y, int width,
+                       int height) {
+
+  x = width > cl->size_hints.min_width ? x : cl->x;
+  y = height > cl->size_hints.min_height ? y : cl->y;
+  width = width > cl->size_hints.min_width ? width : cl->width;
+  height = height > cl->size_hints.min_height ? height : cl->height;
+
+  cl->x = width < cl->size_hints.max_width ? x : cl->x;
+  cl->y = height < cl->size_hints.max_height ? y : cl->y;
+  cl->width = width < cl->size_hints.max_width ? width : cl->width;
+  cl->height = height < cl->size_hints.max_height ? height : cl->height;
+
+  uint32_t value_mask;
+  uint32_t value_list[4];
+
+  value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
+               XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
+  value_list[0] = cl->x;
+  value_list[1] = cl->y;
+  value_list[2] = cl->width;
+  value_list[3] = cl->height;
+  xcb_configure_window(s->c, cl->wid, value_mask, value_list);
+
+  xcb_flush(s->c);
+}
+
 void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e) {
   int half_window_width = cl->width / 2;
   int half_window_height = cl->height / 2;
@@ -187,95 +228,38 @@ void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e) {
     }
   }
 
-  int new_width, new_height, new_x, new_y;
+  int new_x, new_y, new_width, new_height;
 
-  uint32_t value_mask;
-  uint32_t value_list[4];
   switch (s->mouse->resizingcorner) {
+  case CORNER_NONE:
+    return;
   case BOTTOM_RIGHT:
+    new_x = cl->x;
+    new_y = cl->y;
     new_width = cl->width + (e->root_x - s->mouse->root_x);
     new_height = cl->height + (e->root_y - s->mouse->root_y);
-
-    new_width = new_width > MIN_WIDTH ? new_width : MIN_WIDTH;
-    new_height = new_height > MIN_HEIGHT ? new_height : MIN_HEIGHT;
-
-    cl->width = new_width;
-    cl->height = new_height;
-
-    value_mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
-    value_list[0] = new_width;
-    value_list[1] = new_height;
-    xcb_configure_window(s->c, cl->wid, value_mask, value_list);
     break;
   case TOP_RIGHT:
+    new_x = cl->x;
+    new_y = cl->y + (e->root_y - s->mouse->root_y);
     new_width = cl->width + (e->root_x - s->mouse->root_x);
     new_height = cl->height - (e->root_y - s->mouse->root_y);
-    new_y = cl->y + (e->root_y - s->mouse->root_y);
-
-    new_width = new_width > MIN_WIDTH ? new_width : MIN_WIDTH;
-    new_height = new_height > MIN_HEIGHT ? new_height : MIN_HEIGHT;
-    new_y = new_height > MIN_HEIGHT ? new_y : cl->y;
-
-    cl->width = new_width;
-    cl->height = new_height;
-    cl->y = new_y;
-
-    value_mask = XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH |
-                 XCB_CONFIG_WINDOW_HEIGHT;
-    value_list[0] = new_y;
-    value_list[1] = new_width;
-    value_list[2] = new_height;
-    xcb_configure_window(s->c, cl->wid, value_mask, value_list);
     break;
   case BOTTOM_LEFT:
+    new_x = cl->x + (e->root_x - s->mouse->root_x);
+    new_y = cl->y;
     new_width = cl->width - (e->root_x - s->mouse->root_x);
     new_height = cl->height + (e->root_y - s->mouse->root_y);
-    new_x = cl->x + (e->root_x - s->mouse->root_x);
-
-    new_width = new_width > MIN_WIDTH ? new_width : MIN_WIDTH;
-    new_height = new_height > MIN_HEIGHT ? new_height : MIN_HEIGHT;
-    new_x = new_width > MIN_WIDTH ? new_x : cl->x;
-
-    cl->width = new_width;
-    cl->height = new_height;
-    cl->x = new_x;
-
-    value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_WIDTH |
-                 XCB_CONFIG_WINDOW_HEIGHT;
-    value_list[0] = new_x;
-    value_list[1] = new_width;
-    value_list[2] = new_height;
-    xcb_configure_window(s->c, cl->wid, value_mask, value_list);
     break;
   case TOP_LEFT:
-    new_width = cl->width - (e->root_x - s->mouse->root_x);
-    new_height = cl->height - (e->root_y - s->mouse->root_y);
     new_x = cl->x + (e->root_x - s->mouse->root_x);
     new_y = cl->y + (e->root_y - s->mouse->root_y);
-
-    new_width = new_width > MIN_WIDTH ? new_width : MIN_WIDTH;
-    new_height = new_height > MIN_HEIGHT ? new_height : MIN_HEIGHT;
-    new_x = new_width > MIN_WIDTH ? new_x : cl->x;
-    new_y = new_height > MIN_HEIGHT ? new_y : cl->y;
-
-    cl->width = new_width;
-    cl->height = new_height;
-    cl->x = new_x;
-    cl->y = new_y;
-
-    value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
-                 XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
-    value_list[0] = new_x;
-    value_list[1] = new_y;
-    value_list[2] = new_width;
-    value_list[3] = new_height;
-    xcb_configure_window(s->c, cl->wid, value_mask, value_list);
-    break;
-  case CORNER_NONE:
+    new_width = cl->width - (e->root_x - s->mouse->root_x);
+    new_height = cl->height - (e->root_y - s->mouse->root_y);
     break;
   }
 
-  xcb_flush(s->c);
+  client_apply_size(s, cl, new_x, new_y, new_width, new_height);
 }
 
 void client_unfocus(state_t *s) {

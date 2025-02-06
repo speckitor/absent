@@ -3,9 +3,6 @@
 
 #include <xcb/xcb.h>
 
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
-
 typedef struct state_t state_t;
 
 typedef void (*keycallback_t)(state_t *s, const char *command);
@@ -26,6 +23,13 @@ struct monitor_t {
   monitor_t *next;
 };
 
+typedef struct {
+  int min_width;
+  int min_height;
+  int max_width;
+  int max_height;
+} size_hints_t;
+
 typedef struct client_t client_t;
 
 struct client_t {
@@ -33,6 +37,8 @@ struct client_t {
 
   int x, y;
   int width, height;
+
+  size_hints_t size_hints;
 
   int fullscreen;
 

@@ -2,10 +2,12 @@
 #define ABSENT_CLIENTS_H
 
 #include <xcb/xcb.h>
+#include <xcb/xcb_icccm.h>
 
 #include "types.h"
 
 void client_create(state_t *s, xcb_window_t wid);
+void client_set_size_hints(state_t *s, client_t *cl);
 void client_kill(state_t *s, client_t *cl);
 void client_remove(state_t *s, xcb_window_t wid);
 client_t *client_from_wid(state_t *s, xcb_window_t wid);

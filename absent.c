@@ -14,6 +14,7 @@
 
 void setup(state_t *s) {
   s->c = xcb_connect(NULL, NULL);
+
   if (xcb_connection_has_error(s->c)) {
     exit(EXIT_FAILURE);
   }
