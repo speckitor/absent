@@ -65,6 +65,15 @@ void cycleclientsback(state_t *s, const char *command) {
   }
 }
 
+void raiseclient(state_t *s, const char *command) {
+  if (s->focus) {
+    uint32_t value_list[] = {XCB_STACK_MODE_ABOVE};
+    xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_STACK_MODE,
+                         value_list);
+    xcb_flush(s->c);
+  }
+}
+
 void destroyclient(state_t *s, const char *command) {
   if (s->focus) {
     client_kill(s, s->focus);

@@ -62,6 +62,8 @@ void unmap_notify(state_t *s, xcb_generic_event_t *ev) {
 
   client_remove(s, e->window);
 
+  button_release(s);
+
   xcb_flush(s->c);
 }
 
@@ -114,6 +116,8 @@ void destroy_notify(state_t *s, xcb_generic_event_t *ev) {
   xcb_destroy_notify_event_t *e = (xcb_destroy_notify_event_t *)ev;
 
   client_remove(s, e->event);
+
+  button_release(s);
 }
 
 void key_press(state_t *s, xcb_generic_event_t *ev) {
@@ -137,11 +141,7 @@ void key_press(state_t *s, xcb_generic_event_t *ev) {
 void button_press(state_t *s, xcb_generic_event_t *ev) {
   xcb_button_press_event_t *e = (xcb_button_press_event_t *)ev;
 
-  if (s->focus->fullscreen) {
-    return;
-  }
-
-  if (!client_contains_cursor(s, s->focus)) {
+  if (!client_contains_cursor(s, s->focus) || s->focus->fullscreen) {
     return;
   }
 
@@ -150,11 +150,11 @@ void button_press(state_t *s, xcb_generic_event_t *ev) {
   xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_STACK_MODE,
                        value_list);
 
+  xcb_flush(s->c);
+
   s->mouse->pressed_button = e->detail;
   s->mouse->root_x = e->root_x;
   s->mouse->root_y = e->root_y;
-
-  xcb_flush(s->c);
 }
 
 void button_release(state_t *s) {
