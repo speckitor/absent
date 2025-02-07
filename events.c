@@ -141,8 +141,20 @@ void key_press(state_t *s, xcb_generic_event_t *ev) {
 void button_press(state_t *s, xcb_generic_event_t *ev) {
   xcb_button_press_event_t *e = (xcb_button_press_event_t *)ev;
 
-  if (!client_contains_cursor(s, s->focus) || s->focus->fullscreen) {
+  if (!client_contains_cursor(s, s->focus)) {
     return;
+  }
+
+  if (s->focus->fullscreen) {
+    uint32_t value_mask = XCB_CONFIG_WINDOW_BORDER_WIDTH;
+    uint32_t value_list[] = {BORDER_WIDTH};
+    xcb_configure_window(s->c, s->focus->wid, value_mask, value_list);
+    xcb_flush(s->c);
+    s->focus->x = s->focus->monitor->x;
+    s->focus->y = s->focus->monitor->y;
+    s->focus->width = s->focus->monitor->width;
+    s->focus->height = s->focus->monitor->height;
+    s->focus->fullscreen = 0;
   }
 
   uint32_t value_list[] = {XCB_STACK_MODE_ABOVE};

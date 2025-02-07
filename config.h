@@ -6,6 +6,9 @@
 #include "keycallbackfuncs.h"
 #include "types.h"
 
+#define MIN_WINDOW_WIDTH 100
+#define MIN_WINDOW_HEIGHT 100
+
 #define BORDER_WIDTH 3
 #define FOCUSED_BORDER_COLOR 0xf38ba8
 #define UNFOCUSED_BORDER_COLOR 0x9399b2
@@ -24,7 +27,7 @@
 static keybind_t keybinds[] = {{XK_t, SUPER, spawnclient, "kitty"},
                                {XK_v, SUPER, spawnclient, "vesktop"},
                                {XK_f, SUPER, spawnclient, "firefox"},
-                               {XK_l, SUPER, spawnclient, "rofi -show drun"},
+                               {XK_space, ALT, spawnclient, "rofi -show drun"},
                                {XK_j, SUPER, cycleclients, NULL},
                                {XK_k, SUPER, cycleclientsback, NULL},
                                {XK_r, SUPER, raiseclient, NULL},

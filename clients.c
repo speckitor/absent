@@ -85,8 +85,8 @@ void client_set_size_hints(state_t *s, client_t *cl) {
       cl->size_hints.min_width = size_hints.min_width;
       cl->size_hints.min_height = size_hints.min_height;
     } else {
-      cl->size_hints.min_width = 50;
-      cl->size_hints.min_height = 50;
+      cl->size_hints.min_width = MIN_WINDOW_WIDTH;
+      cl->size_hints.min_height = MIN_WINDOW_HEIGHT;
     }
 
     if (size_hints.flags & XCB_ICCCM_SIZE_HINT_P_MAX_SIZE) {
@@ -97,8 +97,8 @@ void client_set_size_hints(state_t *s, client_t *cl) {
       cl->size_hints.max_height = 10000;
     }
   } else {
-    cl->size_hints.min_width = 50;
-    cl->size_hints.min_height = 50;
+    cl->size_hints.min_width = MIN_WINDOW_WIDTH;
+    cl->size_hints.min_height = MIN_WINDOW_HEIGHT;
     cl->size_hints.max_width = 10000;
     cl->size_hints.max_height = 10000;
   }
