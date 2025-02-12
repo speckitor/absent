@@ -4,7 +4,6 @@
 #include "absent.h"
 #include "clients.h"
 #include "config.h"
-#include "keycallbacks.h"
 
 void spawnclient(state_t *s, const char *command) {
   if (fork() == 0) {
@@ -88,30 +87,8 @@ void killclient(state_t *s, const char *command) {
 }
 
 void fullscreen(state_t *s, const char *command) {
-  if (!s->focus) {
-    return;
-  }
-
-  if (s->focus->fullscreen) {
-    uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
-                          XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
-                          XCB_CONFIG_WINDOW_BORDER_WIDTH;
-    uint32_t value_list[] = {s->focus->x, s->focus->y, s->focus->width,
-                             s->focus->height, BORDER_WIDTH};
-    xcb_configure_window(s->c, s->focus->wid, value_mask, value_list);
-    xcb_flush(s->c);
-    s->focus->fullscreen = 0;
-  } else {
-    uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
-                          XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
-                          XCB_CONFIG_WINDOW_BORDER_WIDTH;
-    uint32_t value_list[] = {s->focus->monitor->x, s->focus->monitor->y,
-                             s->focus->monitor->width,
-                             s->focus->monitor->height, 0};
-    xcb_configure_window(s->c, s->focus->wid, value_mask, value_list);
-    xcb_flush(s->c);
-    s->focus->fullscreen = 1;
-  }
+  int fullscreen = s->focus->fullscreen == 1 ? 0 : 1;
+  client_fullscreen(s, s->focus, fullscreen);
 }
 
 void killwm(state_t *s, const char *command) {

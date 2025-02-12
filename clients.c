@@ -1,18 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <xcb/xcb.h>
-#include <xcb/xcb_icccm.h>
 #include <xcb/xproto.h>
 
 #include "clients.h"
 #include "config.h"
 #include "events.h"
 #include "monitors.h"
+#include "types.h"
 
 void client_create(state_t *s, xcb_window_t wid) {
-  xcb_map_window(s->c, wid);
-
   s->monitor_focus = monitor_contains_cursor(s);
 
   xcb_get_geometry_reply_t *attrs =
@@ -35,6 +32,17 @@ void client_create(state_t *s, xcb_window_t wid) {
   cl->x = s->monitor_focus->x + (s->monitor_focus->width - cl->width) / 2;
   cl->y = s->monitor_focus->y + (s->monitor_focus->height - cl->height) / 2;
 
+  xcb_grab_button(s->c, 0, wid,
+                  XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
+                      XCB_EVENT_MASK_BUTTON_MOTION,
+                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, s->root, XCB_NONE,
+                  1, BUTTON_MOD);
+  xcb_grab_button(s->c, 0, wid,
+                  XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
+                      XCB_EVENT_MASK_BUTTON_MOTION,
+                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, s->root, XCB_NONE,
+                  3, BUTTON_MOD);
+
   uint32_t value_list[5];
   uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
                         XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
@@ -47,28 +55,36 @@ void client_create(state_t *s, xcb_window_t wid) {
   xcb_configure_window(s->c, wid, value_mask, value_list);
 
   value_list[0] = UNFOCUSED_BORDER_COLOR;
-  value_list[1] = XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_FOCUS_CHANGE;
+  value_list[1] = XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_PROPERTY_CHANGE;
   xcb_change_window_attributes(
       s->c, wid, XCB_CW_BORDER_PIXEL | XCB_CW_EVENT_MASK, value_list);
 
-  xcb_grab_button(s->c, 0, wid,
-                  XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                      XCB_EVENT_MASK_BUTTON_MOTION,
-                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, s->root, XCB_NONE,
-                  1, BUTTON_MOD);
-  xcb_grab_button(s->c, 0, wid,
-                  XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                      XCB_EVENT_MASK_BUTTON_MOTION,
-                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, s->root, XCB_NONE,
-                  3, BUTTON_MOD);
+  xcb_generic_error_t *error;
 
-  if (client_contains_cursor(s, cl) || !s->focus) {
+  xcb_get_property_cookie_t cookie = xcb_get_property(
+      s->c, 0, wid, s->ewmh[EWMH_STATE], XCB_ATOM_ATOM, 0, sizeof(xcb_atom_t));
+  xcb_get_property_reply_t *reply =
+      xcb_get_property_reply(s->c, cookie, &error);
+
+  if (reply) {
+    if (reply->type == XCB_ATOM_ATOM && reply->format == 32 &&
+        reply->value_len > 0) {
+      xcb_atom_t state = *(xcb_atom_t *)xcb_get_property_value(reply);
+      if (state == s->ewmh[EWMH_FULLSCREEN]) {
+        client_fullscreen(s, cl, 1);
+      }
+    }
+    free(reply);
+  }
+
+  if (error) {
+    free(error);
+  }
+
+  xcb_map_window(s->c, wid);
+
+  if (client_contains_cursor(s, cl)) {
     client_focus(s, cl);
-  } else if (s->focus) {
-    client_focus(s, s->focus);
-  } else {
-    xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root,
-                        XCB_CURRENT_TIME);
   }
 
   xcb_flush(s->c);
@@ -109,12 +125,13 @@ void client_kill(state_t *s, client_t *cl) {
 
   int has_del_atom = 0;
   xcb_icccm_get_wm_protocols_reply_t reply;
-  if (xcb_icccm_get_wm_protocols_reply(s->c,
-                                       xcb_icccm_get_wm_protocols_unchecked(
-                                           s->c, cl->wid, s->wm_protocols_atom),
-                                       &reply, NULL)) {
+  if (xcb_icccm_get_wm_protocols_reply(
+          s->c,
+          xcb_icccm_get_wm_protocols_unchecked(s->c, cl->wid,
+                                               s->icccm[ICCCM_PROTOCOLS]),
+          &reply, NULL)) {
     for (int i = 0; i < reply.atoms_len; i++) {
-      if (reply.atoms[i] == s->wm_delete_window_atom) {
+      if (reply.atoms[i] == s->icccm[ICCCM_DELETE_WINDOW]) {
         has_del_atom = 1;
         break;
       }
@@ -127,13 +144,14 @@ void client_kill(state_t *s, client_t *cl) {
     e.response_type = XCB_CLIENT_MESSAGE;
     e.window = cl->wid;
     e.format = 32;
-    e.type = s->wm_protocols_atom;
-    e.data.data32[0] = s->wm_delete_window_atom;
+    e.type = s->icccm[ICCCM_PROTOCOLS];
+    e.data.data32[0] = s->icccm[ICCCM_DELETE_WINDOW];
     e.data.data32[1] = XCB_TIME_CURRENT_TIME;
     xcb_send_event(s->c, 0, cl->wid, XCB_EVENT_MASK_NO_EVENT, (const char *)&e);
   } else {
     xcb_kill_client(s->c, cl->wid);
   }
+
   xcb_flush(s->c);
 }
 
@@ -178,6 +196,8 @@ void client_move(state_t *s, client_t *cl, int x, int y) {
   cl->y = y;
 
   cl->monitor = monitor_contains_cursor(s);
+
+  client_configure(s, cl);
 }
 
 void client_apply_size(state_t *s, client_t *cl, int x, int y, int width,
@@ -203,6 +223,8 @@ void client_apply_size(state_t *s, client_t *cl, int x, int y, int width,
   value_list[2] = cl->width;
   value_list[3] = cl->height;
   xcb_configure_window(s->c, cl->wid, value_mask, value_list);
+
+  client_configure(s, cl);
 
   xcb_flush(s->c);
 }
@@ -262,6 +284,80 @@ void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e) {
   client_apply_size(s, cl, new_x, new_y, new_width, new_height);
 }
 
+void client_fullscreen(state_t *s, client_t *cl, int fullscreen) {
+  if (!cl) {
+    return;
+  }
+
+  if (!fullscreen) {
+    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, cl->wid,
+                        s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 1,
+                        &s->ewmh[EWMH_FULLSCREEN]);
+
+    uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
+                          XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
+                          XCB_CONFIG_WINDOW_BORDER_WIDTH;
+    uint32_t value_list[] = {cl->oldx, cl->oldy, cl->oldwidth, cl->oldheight,
+                             BORDER_WIDTH};
+    xcb_configure_window(s->c, cl->wid, value_mask, value_list);
+    xcb_flush(s->c);
+
+    cl->x = cl->oldx;
+    cl->y = cl->oldy;
+    cl->width = cl->oldwidth;
+    cl->height = cl->oldheight;
+
+    cl->fullscreen = 0;
+  } else {
+    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, cl->wid,
+                        s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 0, 0);
+
+    uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
+                          XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
+                          XCB_CONFIG_WINDOW_BORDER_WIDTH;
+    uint32_t value_list[] = {cl->monitor->x, cl->monitor->y, cl->monitor->width,
+                             cl->monitor->height, 0};
+    xcb_configure_window(s->c, cl->wid, value_mask, value_list);
+    xcb_flush(s->c);
+
+    cl->oldx = cl->x;
+    cl->oldy = cl->y;
+    cl->oldwidth = cl->width;
+    cl->oldheight = cl->height;
+
+    cl->x = cl->monitor->x;
+    cl->y = cl->monitor->y;
+    cl->width = cl->monitor->width;
+    cl->height = cl->monitor->height;
+
+    cl->fullscreen = 1;
+  }
+
+  client_configure(s, cl);
+}
+
+void client_configure(state_t *s, client_t *cl) {
+  if (!cl) {
+    return;
+  }
+
+  xcb_configure_notify_event_t e;
+
+  e.response_type = XCB_CONFIGURE_NOTIFY;
+  e.event = cl->wid;
+  e.window = cl->wid;
+  e.x = cl->x;
+  e.y = cl->y;
+  e.width = cl->width;
+  e.height = cl->height;
+  e.border_width = BORDER_WIDTH;
+  e.above_sibling = XCB_NONE;
+  e.override_redirect = 0;
+
+  xcb_send_event(s->c, 0, cl->wid, XCB_EVENT_MASK_STRUCTURE_NOTIFY,
+                 (const char *)&e);
+}
+
 void client_unfocus(state_t *s) {
   if (!s->focus) {
     return;
@@ -270,6 +366,12 @@ void client_unfocus(state_t *s) {
   uint32_t value_list[] = {UNFOCUSED_BORDER_COLOR};
   xcb_change_window_attributes(s->c, s->focus->wid, XCB_CW_BORDER_PIXEL,
                                value_list);
+
+  xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root,
+                      XCB_CURRENT_TIME);
+
+  xcb_delete_property(s->c, s->root, s->ewmh[EWMH_ACTIVE_WINDOW]);
+
   xcb_flush(s->c);
 
   s->focus = NULL;
@@ -286,11 +388,19 @@ void client_focus(state_t *s, client_t *cl) {
 
   s->monitor_focus = cl->monitor;
   s->focus = cl;
+
   xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, cl->wid,
                       XCB_CURRENT_TIME);
-  send_event(s, cl, s->wm_take_focus_atom);
+
+  xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, cl->wid,
+                      s->ewmh[EWMH_ACTIVE_WINDOW], XCB_ATOM_WINDOW, 32, 1,
+                      &cl->wid);
+
+  send_event(s, cl, s->icccm[ICCCM_TAKE_FOCUS]);
+
   uint32_t value_list[] = {FOCUSED_BORDER_COLOR};
   xcb_change_window_attributes(s->c, cl->wid, XCB_CW_BORDER_PIXEL, value_list);
+
   xcb_flush(s->c);
 }
 
@@ -309,4 +419,16 @@ int client_contains_cursor(state_t *s, client_t *cl) {
 
   free(reply);
   return ret;
+}
+
+void clients_update_ewmh(state_t *s) {
+  xcb_delete_property(s->c, s->root, s->ewmh[EWMH_CLIENT_LIST]);
+
+  client_t *cl = s->clients;
+  while (s->clients) {
+    xcb_change_property(s->c, XCB_PROP_MODE_APPEND, s->root,
+                        s->ewmh[EWMH_CLIENT_LIST], XCB_ATOM_WINDOW, 32, 1,
+                        &cl->wid);
+    cl = cl->next;
+  }
 }

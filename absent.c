@@ -4,13 +4,14 @@
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_cursor.h>
-#include <xcb/xcb_icccm.h>
+#include <xcb/xproto.h>
 
 #include "absent.h"
 #include "config.h"
 #include "events.h"
 #include "keys.h"
 #include "monitors.h"
+#include "types.h"
 
 void setup(state_t *s) {
   s->c = xcb_connect(NULL, NULL);
@@ -34,26 +35,7 @@ void setup(state_t *s) {
   s->mouse->root_y = 0;
   s->mouse->resizingcorner = CORNER_NONE;
 
-  xcb_intern_atom_reply_t *prot_reply = xcb_intern_atom_reply(
-      s->c, xcb_intern_atom(s->c, 0, strlen("WM_PROTOCOLS"), "WM_PROTOCOLS"),
-      NULL);
-  s->wm_protocols_atom = prot_reply->atom;
-  free(prot_reply);
-
-  xcb_intern_atom_reply_t *del_reply = xcb_intern_atom_reply(
-      s->c,
-      xcb_intern_atom(s->c, 0, strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW"),
-      NULL);
-  s->wm_delete_window_atom = del_reply->atom;
-  free(del_reply);
-
-  xcb_intern_atom_reply_t *focus_reply = xcb_intern_atom_reply(
-      s->c, xcb_intern_atom(s->c, 0, strlen("WM_TAKE_FOCUS"), "WM_TAKE_FOCUS"),
-      NULL);
-  s->wm_take_focus_atom = focus_reply->atom;
-  free(focus_reply);
-
-  xcb_flush(s->c);
+  setup_atoms(s);
 
   size_t length = sizeof(keybinds) / sizeof(keybinds[0]);
   for (int i = 0; i < length; i++) {
@@ -72,7 +54,8 @@ void setup(state_t *s) {
 
   uint32_t value_list[] = {
       XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-      XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_POINTER_MOTION};
+      XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_ENTER_WINDOW |
+      XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_POINTER_MOTION};
   xcb_change_window_attributes_checked(s->c, s->root, XCB_CW_EVENT_MASK,
                                        value_list);
 
@@ -91,6 +74,52 @@ void setup(state_t *s) {
   }
 
   monitors_setup(s);
+
+  xcb_flush(s->c);
+}
+
+xcb_atom_t get_atom(state_t *s, char *name) {
+  xcb_intern_atom_reply_t *atom_reply = xcb_intern_atom_reply(
+      s->c, xcb_intern_atom(s->c, 0, strlen(name), name), NULL);
+  xcb_atom_t atom = atom_reply ? atom_reply->atom : XCB_ATOM_NONE;
+  free(atom_reply);
+  return atom;
+}
+
+void setup_atoms(state_t *s) {
+  s->icccm[ICCCM_PROTOCOLS] = get_atom(s, "WM_PROTOCOLS");
+  s->icccm[ICCCM_DELETE_WINDOW] = get_atom(s, "WM_DELETE_WINDOW");
+  s->icccm[ICCCM_TAKE_FOCUS] = get_atom(s, "WM_TAKE_FOCUS");
+
+  s->ewmh[EWMH_SUPPORTED] = get_atom(s, "_NET_WM_SUPPORTED");
+  s->ewmh[EWMH_CLIENT_LIST] = get_atom(s, "_NET_CLIENT_LIST");
+  s->ewmh[EWMH_NAME] = get_atom(s, "_NET_WM_NAME");
+  s->ewmh[EWMH_ACTIVE_WINDOW] = get_atom(s, "_NET_ACTIVE_WINDOW");
+  s->ewmh[EWMH_STATE] = get_atom(s, "_NET_WM_STATE");
+  s->ewmh[EWMH_FULLSCREEN] = get_atom(s, "_NET_WM_STATE_FULLSCREEN");
+  s->ewmh[EWMH_WINDOW_TYPE] = get_atom(s, "_NEW_WM_WINDOW_TYPE");
+  s->ewmh[EWMH_CHECK] = get_atom(s, "_NET_SUPPORTING_WM_CHECK");
+
+  xcb_window_t checkwid = xcb_generate_id(s->c);
+  xcb_create_window(s->c, XCB_COPY_FROM_PARENT, checkwid, s->root, 0, 0, 1, 1,
+                    0, XCB_WINDOW_CLASS_INPUT_ONLY, XCB_COPY_FROM_PARENT, 0,
+                    NULL);
+
+  xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, checkwid,
+                      s->ewmh[EWMH_CHECK], XCB_ATOM_WINDOW, 32, 1, &checkwid);
+
+  xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, checkwid, s->ewmh[EWMH_NAME],
+                      get_atom(s, "UTF8_STRING"), 8, strlen("absent"),
+                      "absent");
+
+  xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CHECK],
+                      XCB_ATOM_WINDOW, 32, 1, &checkwid);
+
+  xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root,
+                      s->ewmh[EWMH_SUPPORTED], XCB_ATOM_WINDOW, 32,
+                      EWMH_COUNT_ATOMS, s->ewmh);
+
+  xcb_delete_property(s->c, s->root, s->ewmh[EWMH_CLIENT_LIST]);
 
   xcb_flush(s->c);
 }

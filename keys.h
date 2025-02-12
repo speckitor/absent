@@ -1,8 +1,6 @@
 #ifndef ABSENT_KEYS_H
 #define ABSENT_KEYS_H
 
-#include <xcb/xcb.h>
-
 #include "types.h"
 
 xcb_keycode_t *get_keycode(state_t *s, xcb_keysym_t keysym);

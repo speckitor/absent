@@ -1,9 +1,5 @@
 #include <stdlib.h>
 
-#include <xcb/xcb.h>
-
-#include <xcb/randr.h>
-
 #include "absent.h"
 #include "monitors.h"
 
@@ -39,6 +35,7 @@ void monitors_setup(state_t *s) {
     monitor->y = monitors_iter.data->y;
     monitor->width = monitors_iter.data->width;
     monitor->height = monitors_iter.data->height;
+    monitor->clients = NULL;
     monitor->next = s->monitors;
 
     s->monitors = monitor;
