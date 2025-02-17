@@ -4,6 +4,7 @@
 #include "absent.h"
 #include "clients.h"
 #include "config.h"
+#include "layout.h"
 
 void spawnclient(state_t *s, const char *command) {
   if (fork() == 0) {
@@ -14,62 +15,69 @@ void spawnclient(state_t *s, const char *command) {
 
 void cycleclients(state_t *s, const char *command) {
   if (s->clients) {
-    uint32_t value_list[] = {XCB_STACK_MODE_ABOVE};
-    if (!s->focus || !s->focus->next) {
-      xcb_configure_window(s->c, s->clients->wid, XCB_CONFIG_WINDOW_STACK_MODE,
-                           value_list);
-      client_focus(s, s->clients);
-    } else {
-      xcb_configure_window(s->c, s->focus->next->wid,
-                           XCB_CONFIG_WINDOW_STACK_MODE, value_list);
-      client_focus(s, s->focus->next);
+    client_t *cl = !s->focus || !s->focus->next ? s->clients : s->focus->next;
+    client_t *next = NULL;
+
+    while (cl) {
+      if (cl->monitor == s->monitor_focus) {
+        next = cl;
+        break;
+      }
+      cl = cl->next;
+    }
+
+    if (!next) {
+      cl = s->clients;
+      while (cl) {
+        if (cl->monitor == s->monitor_focus) {
+          next = cl;
+          break;
+        }
+        cl = cl->next;
+      }
+    }
+
+    if (next) {
+      client_focus(s, next);
     }
   }
 }
 
 void cycleclientsback(state_t *s, const char *command) {
   if (s->clients) {
-    uint32_t value_list[] = {XCB_STACK_MODE_ABOVE};
-    if (!s->focus) {
-      xcb_configure_window(s->c, s->clients->wid, XCB_CONFIG_WINDOW_STACK_MODE,
-                           value_list);
-      client_focus(s, s->clients);
-    } else {
-      client_t *clients = s->clients->next;
-      client_t *prev = s->clients;
+    client_t *cl = s->clients;
+    client_t *prev = NULL;
+    client_t *target = NULL;
 
-      if (prev->wid == s->focus->wid) {
-        while (clients) {
-          if (!clients->next) {
-            xcb_configure_window(s->c, clients->wid,
-                                 XCB_CONFIG_WINDOW_STACK_MODE, value_list);
-            client_focus(s, clients);
-            return;
-          }
-          clients = clients->next;
-        }
+    while (cl) {
+      if (cl == s->focus) {
+        target = prev;
+        break;
       }
+      prev = cl->monitor == s->monitor_focus ? cl : prev;
+      cl = cl->next;
+    }
 
-      while (clients) {
-        if (clients->wid == s->focus->wid) {
-          xcb_configure_window(s->c, prev->wid, XCB_CONFIG_WINDOW_STACK_MODE,
-                               value_list);
-          client_focus(s, prev);
-          return;
+    if (!target) {
+      cl = s->clients;
+      while (cl) {
+        if (cl->monitor == s->monitor_focus) {
+          target = cl;
         }
-        prev = clients;
-        clients = clients->next;
+        cl = cl->next;
       }
+    }
+
+    if (target) {
+      client_focus(s, target);
     }
   }
 }
 
-void raiseclient(state_t *s, const char *command) {
+void settiled(state_t *s, const char *command) {
   if (s->focus) {
-    uint32_t value_list[] = {XCB_STACK_MODE_ABOVE};
-    xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_STACK_MODE,
-                         value_list);
-    xcb_flush(s->c);
+    s->focus->floating = 0;
+    make_layout(s);
   }
 }
 

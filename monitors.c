@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "absent.h"
+#include "config.h"
 #include "monitors.h"
 
 void monitors_setup(state_t *s) {
@@ -28,16 +29,16 @@ void monitors_setup(state_t *s) {
       xcb_randr_get_monitors_monitors_iterator(monitors_reply);
 
   while (monitors_length) {
-
     monitor_t *monitor = calloc(1, sizeof(monitor_t));
+
+    monitor->layout = DEFAULT_LAYOUT;
 
     monitor->x = monitors_iter.data->x;
     monitor->y = monitors_iter.data->y;
     monitor->width = monitors_iter.data->width;
     monitor->height = monitors_iter.data->height;
-    monitor->clients = NULL;
-    monitor->next = s->monitors;
 
+    monitor->next = s->monitors;
     s->monitors = monitor;
 
     xcb_randr_monitor_info_next(&monitors_iter);

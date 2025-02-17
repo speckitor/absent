@@ -15,12 +15,14 @@ typedef struct {
   const char *command;
 } keybind_t;
 
+typedef enum { MAIN_TILED, VERTICAL, HORIZONTAL } layout_t;
+
 typedef struct monitor_t monitor_t;
 
 typedef struct client_t client_t;
 
 struct monitor_t {
-  client_t *clients;
+  layout_t layout;
 
   int x, y;
   int width, height;
@@ -46,7 +48,7 @@ struct client_t {
 
   size_hints_t size_hints;
 
-  int fullscreen;
+  int fullscreen, floating;
 
   monitor_t *monitor;
 

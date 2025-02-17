@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra
 LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-ewmh -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr 
-C_FILES = absent.c monitors.c clients.c events.c keycallbacks.c keys.c
+C_FILES = absent.c monitors.c clients.c events.c keycallbacks.c keys.c layout.c
 
 BIN_DIR = /usr/bin
 EXEC_FILE = absent

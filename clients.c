@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -6,20 +7,19 @@
 #include "clients.h"
 #include "config.h"
 #include "events.h"
+#include "layout.h"
 #include "monitors.h"
 #include "types.h"
 
 void client_create(state_t *s, xcb_window_t wid) {
   s->monitor_focus = monitor_contains_cursor(s);
 
-  xcb_get_geometry_reply_t *attrs =
-      xcb_get_geometry_reply(s->c, xcb_get_geometry(s->c, wid), NULL);
-
   client_t *cl = calloc(1, sizeof(client_t));
 
   cl->wid = wid;
 
   cl->fullscreen = 0;
+  cl->floating = 0;
 
   cl->monitor = s->monitor_focus;
 
@@ -27,21 +27,11 @@ void client_create(state_t *s, xcb_window_t wid) {
   s->clients = cl;
 
   client_set_size_hints(s, cl);
-  cl->width = attrs->width;
-  cl->height = attrs->height;
-  cl->x = s->monitor_focus->x + (s->monitor_focus->width - cl->width) / 2;
-  cl->y = s->monitor_focus->y + (s->monitor_focus->height - cl->height) / 2;
 
-  xcb_grab_button(s->c, 0, wid,
-                  XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                      XCB_EVENT_MASK_BUTTON_MOTION,
-                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, s->root, XCB_NONE,
-                  1, BUTTON_MOD);
-  xcb_grab_button(s->c, 0, wid,
-                  XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                      XCB_EVENT_MASK_BUTTON_MOTION,
-                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, s->root, XCB_NONE,
-                  3, BUTTON_MOD);
+  cl->x = s->monitor_focus->x;
+  cl->y = s->monitor_focus->y;
+  cl->width = s->monitor_focus->width;
+  cl->height = s->monitor_focus->height;
 
   uint32_t value_list[5];
   uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
@@ -55,9 +45,7 @@ void client_create(state_t *s, xcb_window_t wid) {
   xcb_configure_window(s->c, wid, value_mask, value_list);
 
   value_list[0] = UNFOCUSED_BORDER_COLOR;
-  value_list[1] = XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_PROPERTY_CHANGE;
-  xcb_change_window_attributes(
-      s->c, wid, XCB_CW_BORDER_PIXEL | XCB_CW_EVENT_MASK, value_list);
+  xcb_change_window_attributes(s->c, wid, XCB_CW_BORDER_PIXEL, value_list);
 
   xcb_generic_error_t *error;
 
@@ -86,6 +74,12 @@ void client_create(state_t *s, xcb_window_t wid) {
   if (client_contains_cursor(s, cl)) {
     client_focus(s, cl);
   }
+
+  grab_buttons(s, cl);
+
+  clients_update_ewmh(s);
+
+  make_layout(s);
 
   xcb_flush(s->c);
 }
@@ -374,7 +368,10 @@ void client_unfocus(state_t *s) {
 
   xcb_flush(s->c);
 
+  client_t *cl = s->focus;
   s->focus = NULL;
+
+  grab_buttons(s, cl);
 }
 
 void client_focus(state_t *s, client_t *cl) {
@@ -401,7 +398,52 @@ void client_focus(state_t *s, client_t *cl) {
   uint32_t value_list[] = {FOCUSED_BORDER_COLOR};
   xcb_change_window_attributes(s->c, cl->wid, XCB_CW_BORDER_PIXEL, value_list);
 
+  value_list[0] = XCB_STACK_MODE_ABOVE;
+  xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_STACK_MODE,
+                       value_list);
+
+  grab_buttons(s, s->focus);
+
   xcb_flush(s->c);
+}
+
+void grab_buttons(state_t *s, client_t *cl) {
+  if (!cl) {
+    return;
+  }
+
+  xcb_ungrab_button(s->c, XCB_BUTTON_INDEX_ANY, cl->wid, XCB_MOD_MASK_ANY);
+
+  if (!s->focus || s->focus != cl) {
+    xcb_grab_button(s->c, 0, cl->wid, XCB_EVENT_MASK_BUTTON_PRESS,
+                    XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE,
+                    XCB_BUTTON_INDEX_ANY, XCB_NONE);
+    xcb_grab_button(s->c, 0, cl->wid,
+                    XCB_EVENT_MASK_BUTTON_PRESS |
+                        XCB_EVENT_MASK_BUTTON_RELEASE |
+                        XCB_EVENT_MASK_BUTTON_MOTION,
+                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
+                    XCB_NONE, 1, BUTTON_MOD);
+    xcb_grab_button(s->c, 0, cl->wid,
+                    XCB_EVENT_MASK_BUTTON_PRESS |
+                        XCB_EVENT_MASK_BUTTON_RELEASE |
+                        XCB_EVENT_MASK_BUTTON_MOTION,
+                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
+                    XCB_NONE, 3, BUTTON_MOD);
+  } else {
+    xcb_grab_button(s->c, 0, cl->wid,
+                    XCB_EVENT_MASK_BUTTON_PRESS |
+                        XCB_EVENT_MASK_BUTTON_RELEASE |
+                        XCB_EVENT_MASK_BUTTON_MOTION,
+                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
+                    XCB_NONE, 1, BUTTON_MOD);
+    xcb_grab_button(s->c, 0, cl->wid,
+                    XCB_EVENT_MASK_BUTTON_PRESS |
+                        XCB_EVENT_MASK_BUTTON_RELEASE |
+                        XCB_EVENT_MASK_BUTTON_MOTION,
+                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
+                    XCB_NONE, 3, BUTTON_MOD);
+  }
 }
 
 int client_contains_cursor(state_t *s, client_t *cl) {
@@ -425,7 +467,7 @@ void clients_update_ewmh(state_t *s) {
   xcb_delete_property(s->c, s->root, s->ewmh[EWMH_CLIENT_LIST]);
 
   client_t *cl = s->clients;
-  while (s->clients) {
+  while (cl) {
     xcb_change_property(s->c, XCB_PROP_MODE_APPEND, s->root,
                         s->ewmh[EWMH_CLIENT_LIST], XCB_ATOM_WINDOW, 32, 1,
                         &cl->wid);

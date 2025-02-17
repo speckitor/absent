@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,43 +11,22 @@
 #include "config.h"
 #include "events.h"
 #include "keys.h"
+#include "layout.h"
 #include "monitors.h"
 #include "types.h"
 
 void main_loop(state_t *s) {
   xcb_generic_event_t *event;
-  while ((event = xcb_wait_for_event(s->c))) {
-    switch (XCB_EVENT_RESPONSE_TYPE(event)) {
-    case XCB_MAP_REQUEST:
-      map_request(s, event);
-      break;
-    case XCB_UNMAP_NOTIFY:
-      unmap_notify(s, event);
-      break;
-    case XCB_CONFIGURE_REQUEST:
-      configure_request(s, event);
-      break;
-    case XCB_CLIENT_MESSAGE:
-      client_message(s, event);
-      break;
-    case XCB_DESTROY_NOTIFY:
-      destroy_notify(s, event);
-      break;
-    case XCB_KEY_PRESS:
-      key_press(s, event);
-      break;
-    case XCB_BUTTON_PRESS:
-      button_press(s, event);
-      break;
-    case XCB_BUTTON_RELEASE:
-      button_release(s);
-      break;
-    case XCB_MOTION_NOTIFY:
-      motion_notify(s, event);
-      break;
-    case XCB_ENTER_NOTIFY:
-      enter_notify(s, event);
-      break;
+  while (s->c && !xcb_connection_has_error(s->c)) {
+    event = xcb_poll_for_event(s->c);
+    if (!event) {
+      continue;
+    }
+
+    uint8_t event_type = XCB_EVENT_RESPONSE_TYPE(event);
+
+    if (event_type < XCB_LAST_EVENT && handlers[event_type]) {
+      handlers[event_type](s, event);
     }
 
     free(event);
@@ -67,6 +47,10 @@ void unmap_notify(state_t *s, xcb_generic_event_t *ev) {
   client_remove(s, e->window);
 
   button_release(s);
+
+  clients_update_ewmh(s);
+
+  make_layout(s);
 
   xcb_flush(s->c);
 }
@@ -159,47 +143,30 @@ void key_press(state_t *s, xcb_generic_event_t *ev) {
       keybinds[i].callback(s, keybinds[i].command);
     }
   }
-
-  int valid_child = is_window_valid(s, e->child);
-
-  if (!s->focus && e->child != e->root && valid_child) {
-    client_t *cl = client_from_wid(s, e->child);
-    client_focus(s, cl);
-  }
 }
 
 void button_press(state_t *s, xcb_generic_event_t *ev) {
   xcb_button_press_event_t *e = (xcb_button_press_event_t *)ev;
 
-  if (!client_contains_cursor(s, s->focus)) {
+  client_t *cl = client_from_wid(s, e->event);
+
+  if (!cl || !client_contains_cursor(s, cl)) {
     return;
   }
 
-  uint32_t value_list[] = {XCB_STACK_MODE_ABOVE};
-  xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_STACK_MODE,
-                       value_list);
-
-  if (!e->state) {
-    return;
-  }
-
-  if (s->focus->fullscreen) {
-    uint32_t value_mask = XCB_CONFIG_WINDOW_BORDER_WIDTH;
-    uint32_t value_list[] = {BORDER_WIDTH};
-    xcb_configure_window(s->c, s->focus->wid, value_mask, value_list);
+  if (!s->focus || e->event != s->focus->wid) {
+    client_focus(s, cl);
+    xcb_allow_events(s->c, XCB_ALLOW_REPLAY_POINTER, XCB_CURRENT_TIME);
     xcb_flush(s->c);
-    s->focus->x = s->focus->monitor->x;
-    s->focus->y = s->focus->monitor->y;
-    s->focus->width = s->focus->monitor->width;
-    s->focus->height = s->focus->monitor->height;
-    s->focus->fullscreen = 0;
   }
 
-  xcb_flush(s->c);
-
-  s->mouse->pressed_button = e->detail;
-  s->mouse->root_x = e->root_x;
-  s->mouse->root_y = e->root_y;
+  if (e->state & BUTTON_MOD) {
+    cl->floating = 1;
+    make_layout(s);
+    s->mouse->pressed_button = e->detail;
+    s->mouse->root_x = e->root_x;
+    s->mouse->root_y = e->root_y;
+  }
 }
 
 void button_release(state_t *s) {
@@ -225,6 +192,7 @@ void motion_notify(state_t *s, xcb_generic_event_t *ev) {
   }
 
   if (s->mouse->pressed_button == 1) {
+    s->focus->monitor = s->monitor_focus;
     int x = s->focus->x + (e->root_x - s->mouse->root_x);
     int y = s->focus->y + (e->root_y - s->mouse->root_y);
     client_move(s, s->focus, x, y);
@@ -239,46 +207,8 @@ void motion_notify(state_t *s, xcb_generic_event_t *ev) {
   s->lastmotiontime = current_time;
 }
 
-void enter_notify(state_t *s, xcb_generic_event_t *ev) {
-  xcb_enter_notify_event_t *e = (xcb_enter_notify_event_t *)ev;
-
-  if ((e->mode != XCB_NOTIFY_MODE_NORMAL ||
-       e->detail == XCB_NOTIFY_DETAIL_INFERIOR) &&
-      e->event != s->root) {
-    return;
-  }
-
-  if (e->event != s->root) {
-    client_t *cl = client_from_wid(s, e->event);
-
-    if (!cl) {
-      return;
-    }
-
-    client_focus(s, cl);
-  } else {
-    xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root,
-                        XCB_CURRENT_TIME);
-  }
-  xcb_flush(s->c);
-}
-
-int is_window_valid(state_t *s, xcb_window_t wid) {
-  xcb_get_window_attributes_cookie_t cookie =
-      xcb_get_window_attributes(s->c, wid);
-  xcb_get_window_attributes_reply_t *reply =
-      xcb_get_window_attributes_reply(s->c, cookie, NULL);
-
-  if (reply) {
-    free(reply);
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
 void send_event(state_t *s, client_t *cl, xcb_atom_t protocol) {
-  int has_prot;
+  int has_prot = 0;
   xcb_icccm_get_wm_protocols_reply_t reply;
 
   if (xcb_icccm_get_wm_protocols_reply(

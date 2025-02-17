@@ -6,6 +6,15 @@
 #include "keycallbackfuncs.h"
 #include "types.h"
 
+// there are MAIN_TILED, VERTICAL and HORIZONTAL layouts
+#define DEFAULT_LAYOUT MAIN_TILED
+
+// gap between root window and windows layout
+#define WINDOWS_SCREEN_GAP 0
+
+// gap between windows in layout
+#define WINDOWS_LAYOUT_GAP 0
+
 #define MIN_WINDOW_WIDTH 100
 #define MIN_WINDOW_HEIGHT 100
 
@@ -24,13 +33,13 @@
 // 1 for enable, 0 for disable
 #define ENABLE_AUTOSTART 1
 
-static keybind_t keybinds[] = {{XK_t, SUPER, spawnclient, "kitty"},
+static keybind_t keybinds[] = {{XK_Return, SUPER, spawnclient, "kitty"},
                                {XK_v, SUPER, spawnclient, "vesktop"},
                                {XK_f, SUPER, spawnclient, "firefox"},
                                {XK_space, ALT, spawnclient, "rofi -show drun"},
                                {XK_j, SUPER, cycleclients, NULL},
                                {XK_k, SUPER, cycleclientsback, NULL},
-                               {XK_r, SUPER, raiseclient, NULL},
+                               {XK_t, SUPER, settiled, NULL},
                                {XK_c, SUPER, destroyclient, NULL},
                                {XK_c, SUPER | SHIFT, killclient, NULL},
                                {XK_Escape, SUPER, killwm, NULL},
