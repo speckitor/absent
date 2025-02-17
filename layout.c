@@ -1,10 +1,12 @@
 #include "layout.h"
-#include "clients.h"
 #include "config.h"
-#include "monitors.h"
 #include "types.h"
 
 void make_layout(state_t *s) {
+  if (!s->monitor_focus) {
+    return;
+  }
+
   client_t *cl = s->clients;
   monitor_t *mon = s->monitor_focus;
 
@@ -35,14 +37,13 @@ void make_layout(state_t *s) {
 }
 
 void main_tiled(state_t *s, int length) {
-  s->monitor_focus = monitor_contains_cursor(s);
-
   client_t *cl = s->clients;
   int i, mw, h, ty;
 
   mw = length > 1 ? s->monitor_focus->width / 2 : s->monitor_focus->width;
 
-  for (i = ty = 0, cl = next_tiled(cl); cl; cl = next_tiled(cl->next), i++) {
+  for (i = ty = 0, cl = next_tiled(s, cl); cl;
+       cl = next_tiled(s, cl->next), i++) {
     if (i < 1) {
       client_move_resize(s, cl, s->monitor_focus->x, s->monitor_focus->y,
                          mw - (2 * BORDER_WIDTH),
@@ -58,8 +59,9 @@ void main_tiled(state_t *s, int length) {
   }
 }
 
-client_t *next_tiled(client_t *cl) {
-  while (cl && (cl->floating || cl->fullscreen)) {
+client_t *next_tiled(state_t *s, client_t *cl) {
+  while (cl &&
+         (cl->floating || cl->fullscreen || s->monitor_focus != cl->monitor)) {
     cl = cl->next;
   }
   return cl;
@@ -82,4 +84,5 @@ void client_move_resize(state_t *s, client_t *cl, int x, int y, int width,
   value_list[2] = cl->width;
   value_list[3] = cl->height;
   xcb_configure_window(s->c, cl->wid, value_mask, value_list);
+  xcb_flush(s->c);
 }

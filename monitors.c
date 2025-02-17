@@ -53,6 +53,10 @@ monitor_t *monitor_contains_cursor(state_t *s) {
   xcb_query_pointer_reply_t *reply =
       xcb_query_pointer_reply(s->c, xcb_query_pointer(s->c, s->root), NULL);
 
+  if (!reply) {
+    return s->monitors;
+  }
+
   if (reply) {
     monitor_t *monitor = s->monitors;
     while (monitor) {
