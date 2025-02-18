@@ -25,7 +25,7 @@ void client_create(state_t *s, xcb_window_t wid) {
 
   client_t *clients = s->clients;
 
-  if (!clients) {
+  if (!clients || SET_NEW_WINDOW_MAIN) {
     cl->next = s->clients;
     s->clients = cl;
   } else {
@@ -121,6 +121,34 @@ void client_set_size_hints(state_t *s, client_t *cl) {
     cl->size_hints.min_height = MIN_WINDOW_HEIGHT;
     cl->size_hints.max_width = 10000;
     cl->size_hints.max_height = 10000;
+  }
+}
+
+client_t *client_kill_next_focus(state_t *s) {
+  if (s->focus) {
+    client_t *next = s->focus->next;
+    while (next && (next->fullscreen || next->floating ||
+                    next->monitor != s->monitor_focus)) {
+      next = next->next;
+    }
+
+    if (!next || next == s->focus) {
+      next = NULL;
+      client_t *tmp = s->clients;
+      while (tmp != s->focus) {
+        if (!tmp->floating && !tmp->fullscreen &&
+            tmp->monitor == s->focus->monitor) {
+          next = tmp;
+        }
+        tmp = tmp->next;
+      }
+    }
+
+    if (next) {
+      return next;
+    }
+
+    return NULL;
   }
 }
 
@@ -304,6 +332,11 @@ void client_fullscreen(state_t *s, client_t *cl, int fullscreen) {
     uint32_t value_list[] = {cl->oldx, cl->oldy, cl->oldwidth, cl->oldheight,
                              BORDER_WIDTH};
     xcb_configure_window(s->c, cl->wid, value_mask, value_list);
+
+    value_list[0] = XCB_STACK_MODE_ABOVE;
+    xcb_configure_window(s->c, cl->wid, XCB_CONFIG_WINDOW_STACK_MODE,
+                         value_list);
+
     xcb_flush(s->c);
 
     cl->x = cl->oldx;
@@ -313,9 +346,9 @@ void client_fullscreen(state_t *s, client_t *cl, int fullscreen) {
 
     cl->fullscreen = 0;
   } else {
+
     xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, cl->wid,
                         s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 0, 0);
-
     uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
                           XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
                           XCB_CONFIG_WINDOW_BORDER_WIDTH;

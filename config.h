@@ -15,6 +15,12 @@
 // gap between windows in layout
 #define LAYOUT_GAP 5
 
+// floating number that specifies how tall or wide should be main window
+#define MAIN_WINDOW_AREA 0.55
+
+// new window opens as main window
+#define SET_NEW_WINDOW_MAIN 0
+
 #define MIN_WINDOW_WIDTH 100
 #define MIN_WINDOW_HEIGHT 100
 
@@ -37,9 +43,12 @@ static keybind_t keybinds[] = {{XK_Return, SUPER, spawnclient, "kitty"},
                                {XK_v, SUPER, spawnclient, "vesktop"},
                                {XK_f, SUPER, spawnclient, "firefox"},
                                {XK_space, ALT, spawnclient, "rofi -show drun"},
-                               {XK_j, SUPER, cycleclients, NULL},
-                               {XK_k, SUPER, cycleclientsback, NULL},
+                               {XK_j, SUPER, cyclefocusdown, NULL},
+                               {XK_k, SUPER, cyclefocusup, NULL},
                                {XK_t, SUPER, settiled, NULL},
+                               {XK_s, SUPER, swapmainfocus, NULL},
+                               {XK_j, SUPER | SHIFT, swapfocusdown, NULL},
+                               {XK_k, SUPER | SHIFT, swapfocusup, NULL},
                                {XK_c, SUPER, destroyclient, NULL},
                                {XK_c, SUPER | SHIFT, killclient, NULL},
                                {XK_Escape, SUPER, killwm, NULL},

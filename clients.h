@@ -9,6 +9,7 @@
 void client_create(state_t *s, xcb_window_t wid);
 void client_set_size_hints(state_t *s, client_t *cl);
 void client_kill(state_t *s, client_t *cl);
+client_t *client_kill_next_focus(state_t *s);
 void client_remove(state_t *s, xcb_window_t wid);
 client_t *client_from_wid(state_t *s, xcb_window_t wid);
 void client_move(state_t *s, client_t *cl, int x, int y);

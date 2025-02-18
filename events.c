@@ -166,6 +166,10 @@ void button_press(state_t *s, xcb_generic_event_t *ev) {
     return;
   }
 
+  uint16_t value_list[] = {XCB_STACK_MODE_ABOVE};
+  xcb_configure_window(s->c, e->event, XCB_CONFIG_WINDOW_STACK_MODE,
+                       value_list);
+
   if (!s->focus || e->event != s->focus->wid) {
     client_focus(s, cl);
     xcb_allow_events(s->c, XCB_ALLOW_REPLAY_POINTER, XCB_CURRENT_TIME);
@@ -178,6 +182,13 @@ void button_press(state_t *s, xcb_generic_event_t *ev) {
     s->mouse->pressed_button = e->detail;
     s->mouse->root_x = e->root_x;
     s->mouse->root_y = e->root_y;
+
+    if (s->focus->fullscreen) {
+      s->focus->fullscreen = 0;
+      uint32_t value_list[] = {BORDER_WIDTH};
+      xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_BORDER_WIDTH,
+                           value_list);
+    }
   }
 }
 

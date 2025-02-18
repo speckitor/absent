@@ -3,8 +3,8 @@
 
 #include "absent.h"
 #include "clients.h"
-#include "config.h"
 #include "layout.h"
+#include "monitors.h"
 
 void spawnclient(state_t *s, const char *command) {
   if (fork() == 0) {
@@ -13,7 +13,7 @@ void spawnclient(state_t *s, const char *command) {
   }
 }
 
-void cycleclients(state_t *s, const char *command) {
+void cyclefocusdown(state_t *s, const char *command) {
   if (s->clients) {
     client_t *cl = !s->focus || !s->focus->next ? s->clients : s->focus->next;
     client_t *next = NULL;
@@ -43,7 +43,7 @@ void cycleclients(state_t *s, const char *command) {
   }
 }
 
-void cycleclientsback(state_t *s, const char *command) {
+void cyclefocusup(state_t *s, const char *command) {
   if (s->clients) {
     client_t *cl = s->clients;
     client_t *prev = NULL;
@@ -81,21 +81,78 @@ void settiled(state_t *s, const char *command) {
   }
 }
 
-void setmaintiled(state_t *s, const char *command) {
+void swapmainfocus(state_t *s, const char *command) {
+  if (s->focus && s->focus->monitor == monitor_contains_cursor(s)) {
+    client_t *cl = s->clients;
+    while (cl && (cl->fullscreen || cl->floating ||
+                  cl->monitor != s->focus->monitor)) {
+      cl = cl->next;
+    }
+
+    if (!cl || cl == s->focus) {
+      return;
+    } else {
+      swap_clients(s, cl, s->focus);
+      make_layout(s);
+    }
+  }
+}
+
+void swapfocusdown(state_t *s, const char *command) {
   if (s->focus) {
+    client_t *cl = s->focus->next;
+    while (cl && (cl->fullscreen || cl->floating ||
+                  cl->monitor != s->focus->monitor)) {
+      cl = cl->next;
+    }
+
+    if (cl) {
+      swap_clients(s, cl, s->focus);
+      make_layout(s);
+    }
+  }
+}
+
+void swapfocusup(state_t *s, const char *command) {
+  if (s->focus) {
+    client_t *prev = NULL;
+    client_t *cl = s->clients;
+    while (cl != s->focus) {
+      if (!cl->fullscreen && !cl->floating && cl->monitor == s->monitor_focus) {
+        prev = cl;
+      }
+      cl = cl->next;
+    }
+
+    if (prev) {
+      swap_clients(s, prev, s->focus);
+      make_layout(s);
+    }
   }
 }
 
 void destroyclient(state_t *s, const char *command) {
   if (s->focus) {
+    client_t *next = client_kill_next_focus(s);
+
     client_kill(s, s->focus);
+
+    if (next) {
+      client_focus(s, next);
+    }
   }
 }
 
 void killclient(state_t *s, const char *command) {
   if (s->focus) {
+    client_t *next = client_kill_next_focus(s);
+
     xcb_kill_client(s->c, s->focus->wid);
     xcb_flush(s->c);
+
+    if (next) {
+      client_focus(s, next);
+    }
   }
 }
 

@@ -4,10 +4,12 @@
 #include "types.h"
 
 void spawnclient(state_t *s, const char *command);
-void cycleclients(state_t *s, const char *command);
-void cycleclientsback(state_t *s, const char *command);
+void cyclefocusdown(state_t *s, const char *command);
+void cyclefocusup(state_t *s, const char *command);
 void settiled(state_t *s, const char *command);
-void setmaintiled(state_t *s, const char *command);
+void swapmainfocus(state_t *s, const char *command);
+void swapfocusdown(state_t *s, const char *command);
+void swapfocusup(state_t *s, const char *command);
 void destroyclient(state_t *s, const char *command);
 void killclient(state_t *s, const char *command);
 void fullscreen(state_t *s, const char *command);

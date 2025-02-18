@@ -40,7 +40,8 @@ void main_tiled(state_t *s, int length) {
   client_t *cl = s->clients;
   int i, mw, ty, x, y, w, h;
 
-  mw = length > 1 ? s->monitor_focus->width / 2 - (LAYOUT_GAP / 2) - SCREEN_GAP
+  mw = length > 1 ? s->monitor_focus->width * MAIN_WINDOW_AREA -
+                        (LAYOUT_GAP / 2) - SCREEN_GAP
                   : s->monitor_focus->width - (2 * SCREEN_GAP);
   ty = SCREEN_GAP + 1;
 
@@ -49,14 +50,15 @@ void main_tiled(state_t *s, int length) {
       x = s->monitor_focus->x + SCREEN_GAP;
       y = s->monitor_focus->y + ty;
       w = mw - (2 * BORDER_WIDTH);
-      h = s->monitor_focus->height - (2 * BORDER_WIDTH) - (2 * SCREEN_GAP);
+      h = s->monitor_focus->height - (2 * BORDER_WIDTH) - (2 * SCREEN_GAP) - 1;
       client_move_resize(s, cl, x, y, w, h);
     } else {
       x = s->monitor_focus->x + mw + LAYOUT_GAP + SCREEN_GAP;
       y = s->monitor_focus->y + ty;
-      w = mw - (2 * BORDER_WIDTH);
+      w = s->monitor_focus->width - mw - LAYOUT_GAP - (2 * SCREEN_GAP) -
+          (2 * BORDER_WIDTH);
       h = (s->monitor_focus->height - ty - SCREEN_GAP) / (length - i) -
-          (2 * BORDER_WIDTH) + 1;
+          (2 * BORDER_WIDTH) - 1;
       client_move_resize(s, cl, x, y, w, h);
       ty += cl->height + 2 * BORDER_WIDTH + LAYOUT_GAP;
     }
@@ -100,4 +102,37 @@ void swap_clients(state_t *s, client_t *cl1, client_t *cl2) {
   prev1 = NULL;
   prev2 = NULL;
   tmp = s->clients;
+
+  while (tmp && tmp != cl1) {
+    prev1 = tmp;
+    tmp = tmp->next;
+  }
+  if (!tmp) {
+    return;
+  }
+
+  tmp = s->clients;
+  while (tmp && tmp != cl2) {
+    prev2 = tmp;
+    tmp = tmp->next;
+  }
+  if (!tmp) {
+    return;
+  }
+
+  if (prev1) {
+    prev1->next = cl2;
+  } else {
+    s->clients = cl2;
+  }
+
+  if (prev2) {
+    prev2->next = cl1;
+  } else {
+    s->clients = cl1;
+  }
+
+  tmp = cl1->next;
+  cl1->next = cl2->next;
+  cl2->next = tmp;
 }
