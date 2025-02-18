@@ -19,7 +19,31 @@ void client_create(state_t *s, xcb_window_t wid) {
   cl->wid = wid;
 
   cl->fullscreen = 0;
-  cl->floating = 0;
+
+  xcb_generic_error_t *type_error;
+  xcb_get_property_cookie_t type_cookie =
+      xcb_get_property(s->c, 0, wid, s->ewmh[EWMH_WINDOW_TYPE], XCB_ATOM_ATOM,
+                       0, sizeof(xcb_atom_t));
+  xcb_get_property_reply_t *type_reply =
+      xcb_get_property_reply(s->c, type_cookie, &type_error);
+
+  if (type_reply) {
+    if (type_reply->type == XCB_ATOM_ATOM && type_reply->format == 32 &&
+        type_reply->value_len > 0) {
+      xcb_atom_t atom = *(xcb_atom_t *)xcb_get_property_value(type_reply);
+      if (atom != s->ewmh[EWMH_WINDOW_TYPE_NORMAL]) {
+        cl->floating = 1;
+      } else {
+        cl->floating = 0;
+      }
+    }
+    free(type_reply);
+  } else {
+    cl->floating = 0;
+  }
+  if (type_error) {
+    free(type_error);
+  }
 
   cl->monitor = s->monitor_focus;
 
@@ -38,10 +62,26 @@ void client_create(state_t *s, xcb_window_t wid) {
 
   client_set_size_hints(s, cl);
 
-  cl->x = s->monitor_focus->x;
-  cl->y = s->monitor_focus->y;
-  cl->width = s->monitor_focus->width;
-  cl->height = s->monitor_focus->height;
+  if (cl->size_hints.max_width == cl->size_hints.min_width &&
+      cl->size_hints.max_height == cl->size_hints.min_height) {
+    cl->floating = 1;
+  }
+
+  xcb_get_geometry_reply_t *geom_reply =
+      xcb_get_geometry_reply(s->c, xcb_get_geometry(s->c, cl->wid), NULL);
+
+  if (!geom_reply) {
+    cl->x = s->monitor_focus->x;
+    cl->y = s->monitor_focus->y;
+    cl->width = s->monitor_focus->width;
+    cl->height = s->monitor_focus->height;
+  } else {
+    cl->x = geom_reply->x;
+    cl->y = geom_reply->y;
+    cl->width = geom_reply->width;
+    cl->height = geom_reply->height;
+    free(geom_reply);
+  }
 
   uint32_t value_list[5];
   uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |

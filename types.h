@@ -48,7 +48,7 @@ struct client_t {
 
   size_hints_t size_hints;
 
-  int fullscreen, floating;
+  int fullscreen, floating, tile;
 
   monitor_t *monitor;
 

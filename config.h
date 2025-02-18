@@ -16,7 +16,7 @@
 #define LAYOUT_GAP 5
 
 // floating number that specifies how tall or wide should be main window
-#define MAIN_WINDOW_AREA 0.55
+#define MAIN_WINDOW_AREA 0.5
 
 // new window opens as main window
 #define SET_NEW_WINDOW_MAIN 0
