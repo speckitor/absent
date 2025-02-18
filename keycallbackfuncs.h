@@ -7,6 +7,7 @@ void spawnclient(state_t *s, const char *command);
 void cycleclients(state_t *s, const char *command);
 void cycleclientsback(state_t *s, const char *command);
 void settiled(state_t *s, const char *command);
+void setmaintiled(state_t *s, const char *command);
 void destroyclient(state_t *s, const char *command);
 void killclient(state_t *s, const char *command);
 void fullscreen(state_t *s, const char *command);

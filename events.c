@@ -44,13 +44,25 @@ void unmap_notify(state_t *s, xcb_generic_event_t *ev) {
 
   xcb_unmap_window(s->c, e->window);
 
+  client_t *cl = client_from_wid(s, e->window);
+
+  if (!cl) {
+    return;
+  }
+
+  if (cl->monitor != s->monitor_focus) {
+    s->monitor_focus = cl->monitor;
+  }
+
   client_remove(s, e->window);
+
+  make_layout(s);
 
   button_release(s);
 
   clients_update_ewmh(s);
 
-  make_layout(s);
+  s->monitor_focus = monitor_contains_cursor(s);
 
   xcb_flush(s->c);
 }

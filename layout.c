@@ -38,23 +38,27 @@ void make_layout(state_t *s) {
 
 void main_tiled(state_t *s, int length) {
   client_t *cl = s->clients;
-  int i, mw, h, ty;
+  int i, mw, ty, x, y, w, h;
 
-  mw = length > 1 ? s->monitor_focus->width / 2 : s->monitor_focus->width;
+  mw = length > 1 ? s->monitor_focus->width / 2 - (LAYOUT_GAP / 2) - SCREEN_GAP
+                  : s->monitor_focus->width - (2 * SCREEN_GAP);
+  ty = SCREEN_GAP + 1;
 
-  for (i = ty = 0, cl = next_tiled(s, cl); cl;
-       cl = next_tiled(s, cl->next), i++) {
+  for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
     if (i < 1) {
-      client_move_resize(s, cl, s->monitor_focus->x, s->monitor_focus->y,
-                         mw - (2 * BORDER_WIDTH),
-                         s->monitor_focus->height - (2 * BORDER_WIDTH));
+      x = s->monitor_focus->x + SCREEN_GAP;
+      y = s->monitor_focus->y + ty;
+      w = mw - (2 * BORDER_WIDTH);
+      h = s->monitor_focus->height - (2 * BORDER_WIDTH) - (2 * SCREEN_GAP);
+      client_move_resize(s, cl, x, y, w, h);
     } else {
-      h = (s->monitor_focus->height - ty) / (length - i);
-      client_move_resize(s, cl, s->monitor_focus->x + mw,
-                         s->monitor_focus->y + ty,
-                         s->monitor_focus->width - (2 * BORDER_WIDTH) - mw,
-                         h - (2 * BORDER_WIDTH));
-      ty += cl->height + 2 * BORDER_WIDTH;
+      x = s->monitor_focus->x + mw + LAYOUT_GAP + SCREEN_GAP;
+      y = s->monitor_focus->y + ty;
+      w = mw - (2 * BORDER_WIDTH);
+      h = (s->monitor_focus->height - ty - SCREEN_GAP) / (length - i) -
+          (2 * BORDER_WIDTH) + 1;
+      client_move_resize(s, cl, x, y, w, h);
+      ty += cl->height + 2 * BORDER_WIDTH + LAYOUT_GAP;
     }
   }
 }
@@ -85,4 +89,15 @@ void client_move_resize(state_t *s, client_t *cl, int x, int y, int width,
   value_list[3] = cl->height;
   xcb_configure_window(s->c, cl->wid, value_mask, value_list);
   xcb_flush(s->c);
+}
+
+void swap_clients(state_t *s, client_t *cl1, client_t *cl2) {
+  if (cl1 == cl2) {
+    return;
+  }
+
+  client_t *prev1, *prev2, *tmp;
+  prev1 = NULL;
+  prev2 = NULL;
+  tmp = s->clients;
 }

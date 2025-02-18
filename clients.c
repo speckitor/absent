@@ -23,8 +23,18 @@ void client_create(state_t *s, xcb_window_t wid) {
 
   cl->monitor = s->monitor_focus;
 
-  cl->next = s->clients;
-  s->clients = cl;
+  client_t *clients = s->clients;
+
+  if (!clients) {
+    cl->next = s->clients;
+    s->clients = cl;
+  } else {
+    while (clients->next) {
+      clients = clients->next;
+    }
+    clients->next = cl;
+    cl->next = NULL;
+  }
 
   client_set_size_hints(s, cl);
 
@@ -71,15 +81,15 @@ void client_create(state_t *s, xcb_window_t wid) {
 
   xcb_map_window(s->c, wid);
 
-  if (client_contains_cursor(s, cl)) {
-    client_focus(s, cl);
-  }
-
   grab_buttons(s, cl);
 
   clients_update_ewmh(s);
 
   make_layout(s);
+
+  if (client_contains_cursor(s, cl)) {
+    client_focus(s, cl);
+  }
 
   xcb_flush(s->c);
 }

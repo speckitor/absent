@@ -98,7 +98,8 @@ void setup_atoms(state_t *s) {
   s->ewmh[EWMH_ACTIVE_WINDOW] = get_atom(s, "_NET_ACTIVE_WINDOW");
   s->ewmh[EWMH_STATE] = get_atom(s, "_NET_WM_STATE");
   s->ewmh[EWMH_FULLSCREEN] = get_atom(s, "_NET_WM_STATE_FULLSCREEN");
-  s->ewmh[EWMH_WINDOW_TYPE] = get_atom(s, "_NEW_WM_WINDOW_TYPE");
+  s->ewmh[EWMH_WINDOW_TYPE] = get_atom(s, "_NET_WM_WINDOW_TYPE");
+  s->ewmh[EWMH_WINDOW_TYPE_NORMAL] = get_atom(s, "_NET_WM_WINDOW_TYPE_NORMAL");
   s->ewmh[EWMH_CHECK] = get_atom(s, "_NET_SUPPORTING_WM_CHECK");
 
   xcb_window_t checkwid = xcb_generate_id(s->c);

@@ -81,6 +81,11 @@ void settiled(state_t *s, const char *command) {
   }
 }
 
+void setmaintiled(state_t *s, const char *command) {
+  if (s->focus) {
+  }
+}
+
 void destroyclient(state_t *s, const char *command) {
   if (s->focus) {
     client_kill(s, s->focus);

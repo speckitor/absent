@@ -10,15 +10,15 @@
 #define DEFAULT_LAYOUT MAIN_TILED
 
 // gap between root window and windows layout
-#define WINDOWS_SCREEN_GAP 0
+#define SCREEN_GAP 10
 
 // gap between windows in layout
-#define WINDOWS_LAYOUT_GAP 0
+#define LAYOUT_GAP 5
 
 #define MIN_WINDOW_WIDTH 100
 #define MIN_WINDOW_HEIGHT 100
 
-#define BORDER_WIDTH 3
+#define BORDER_WIDTH 1
 #define FOCUSED_BORDER_COLOR 0xf38ba8
 #define UNFOCUSED_BORDER_COLOR 0x9399b2
 
