@@ -58,7 +58,7 @@ void main_tiled(state_t *s, int length) {
       w = s->monitor_focus->width - mw - LAYOUT_GAP - (2 * SCREEN_GAP) -
           (2 * BORDER_WIDTH);
       h = (s->monitor_focus->height - ty - SCREEN_GAP) / (length - i) -
-          (2 * BORDER_WIDTH) - 1;
+          (2 * BORDER_WIDTH);
       client_move_resize(s, cl, x, y, w, h);
       ty += cl->height + 2 * BORDER_WIDTH + LAYOUT_GAP;
     }

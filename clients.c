@@ -20,6 +20,8 @@ void client_create(state_t *s, xcb_window_t wid) {
 
   cl->fullscreen = 0;
 
+  int floating = 0;
+
   xcb_generic_error_t *type_error;
   xcb_get_property_cookie_t type_cookie =
       xcb_get_property(s->c, 0, wid, s->ewmh[EWMH_WINDOW_TYPE], XCB_ATOM_ATOM,
@@ -30,17 +32,25 @@ void client_create(state_t *s, xcb_window_t wid) {
   if (type_reply) {
     if (type_reply->type == XCB_ATOM_ATOM && type_reply->format == 32 &&
         type_reply->value_len > 0) {
-      xcb_atom_t atom = *(xcb_atom_t *)xcb_get_property_value(type_reply);
-      if (atom != s->ewmh[EWMH_WINDOW_TYPE_NORMAL]) {
-        cl->floating = 1;
-      } else {
-        cl->floating = 0;
+      xcb_atom_t *atoms = xcb_get_property_value(type_reply);
+      int len = xcb_get_property_value_length(type_reply) / sizeof(xcb_atom_t);
+
+      for (int i = 0; i < len; i++) {
+        if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_NORMAL]) {
+          floating = 0;
+          break;
+        } else {
+          floating = 1;
+        }
       }
     }
     free(type_reply);
   } else {
-    cl->floating = 0;
+    floating = 0;
   }
+
+  cl->floating = floating;
+
   if (type_error) {
     free(type_error);
   }
