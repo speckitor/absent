@@ -21,9 +21,14 @@ typedef struct monitor_t monitor_t;
 
 typedef struct client_t client_t;
 
+typedef struct {
+  int left, right, top, bottom;
+} padding_t;
+
 struct monitor_t {
   layout_t layout;
 
+  padding_t padding;
   int x, y;
   int width, height;
 
@@ -31,10 +36,8 @@ struct monitor_t {
 };
 
 typedef struct {
-  int min_width;
-  int min_height;
-  int max_width;
-  int max_height;
+  int min_width, min_height;
+  int max_width, max_height;
 } size_hints_t;
 
 struct client_t {
@@ -86,6 +89,8 @@ typedef enum {
   EWMH_FULLSCREEN,
   EWMH_WINDOW_TYPE,
   EWMH_WINDOW_TYPE_NORMAL,
+  EWMH_WINDOW_TYPE_DOCK,
+  EWMH_STRUT_PARTIAL,
   EWMH_CHECK,
   EWMH_COUNT_ATOMS
 } ewmh_atoms_t;

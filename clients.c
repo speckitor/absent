@@ -14,11 +14,7 @@
 void client_create(state_t *s, xcb_window_t wid) {
   s->monitor_focus = monitor_contains_cursor(s);
 
-  client_t *cl = calloc(1, sizeof(client_t));
-
-  cl->wid = wid;
-
-  cl->fullscreen = 0;
+  int is_dock = 0;
 
   int floating = 0;
 
@@ -39,6 +35,9 @@ void client_create(state_t *s, xcb_window_t wid) {
         if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_NORMAL]) {
           floating = 0;
           break;
+        } else if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_DOCK]) {
+          is_dock = 1;
+          break;
         } else {
           floating = 1;
         }
@@ -48,6 +47,17 @@ void client_create(state_t *s, xcb_window_t wid) {
   } else {
     floating = 0;
   }
+
+  if (is_dock) {
+    make_dock(s, wid);
+    return;
+  }
+
+  client_t *cl = calloc(1, sizeof(client_t));
+
+  cl->wid = wid;
+
+  cl->fullscreen = 0;
 
   cl->floating = floating;
 
@@ -142,6 +152,84 @@ void client_create(state_t *s, xcb_window_t wid) {
   }
 
   xcb_flush(s->c);
+}
+
+void make_dock(state_t *s, xcb_window_t wid) {
+  xcb_get_property_cookie_t strut_cookie = xcb_get_property(
+      s->c, 0, wid, s->ewmh[EWMH_STRUT_PARTIAL], XCB_ATOM_CARDINAL, 0, 12);
+  xcb_get_property_reply_t *strut_reply =
+      xcb_get_property_reply(s->c, strut_cookie, NULL);
+
+  if (strut_reply) {
+    uint32_t *strut = (uint32_t *)xcb_get_property_value(strut_reply);
+    if (strut) {
+      int left = strut[0];
+      int right = strut[1];
+      int top = strut[2];
+      int bottom = strut[3];
+
+      int left_start_y = strut[4];
+      int left_end_y = strut[5];
+      int right_start_y = strut[6];
+      int right_end_y = strut[7];
+      int top_start_x = strut[8];
+      int top_end_x = strut[9];
+      int bottom_start_x = strut[10];
+      int bottom_end_x = strut[11];
+
+      for (monitor_t *mon = s->monitors; mon != NULL; mon = mon->next) {
+        if ((left > 0) && (left > mon->x) &&
+            (left_start_y <= mon->y + mon->height) && (left_end_y >= mon->y)) {
+          int dx = left - mon->x;
+          if (mon->padding.left <= 0) {
+            mon->padding.left += dx;
+          } else {
+            mon->padding.left = dx > mon->padding.left ? dx : mon->padding.left;
+          }
+        }
+
+        if ((mon->x + mon->width > s->screen->width_in_pixels - right) &&
+            (s->screen->width_in_pixels - right > mon->x) &&
+            (right_start_y < mon->x + mon->width) && (right_end_y >= mon->y)) {
+          int dx = mon->x + mon->width - s->screen->width_in_pixels + right;
+          if (mon->padding.right <= 0) {
+            mon->padding.right += dx;
+          } else {
+            mon->padding.right =
+                dx > mon->padding.right ? dx : mon->padding.right;
+          }
+        }
+
+        if ((top > 0) && (mon->y <= top) && (top < mon->y + mon->height - 1) &&
+            (top_start_x < mon->x + mon->width) && (top_end_x >= mon->x)) {
+          int dy = top - mon->y;
+          if (mon->padding.top <= 0) {
+            mon->padding.top += dy;
+          } else {
+            mon->padding.top = dy > mon->padding.top ? dy : mon->padding.top;
+          }
+        }
+
+        if ((bottom > 0) && (mon->height - bottom > mon->y) &&
+            (bottom_start_x < mon->x + mon->width) &&
+            (bottom_end_x >= mon->x)) {
+          int dy = mon->y + bottom;
+          if (mon->padding.bottom <= 0) {
+            mon->padding.bottom += dy;
+          } else {
+            mon->padding.bottom =
+                dy > mon->padding.bottom ? dy : mon->padding.bottom;
+          }
+        }
+      }
+    }
+  }
+
+  free(strut_reply);
+
+  xcb_map_window(s->c, wid);
+
+  make_layout(s);
 }
 
 void client_set_size_hints(state_t *s, client_t *cl) {

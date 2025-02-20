@@ -7,6 +7,7 @@
 #include "types.h"
 
 void client_create(state_t *s, xcb_window_t wid);
+void make_dock(state_t *s, xcb_window_t wid);
 void client_set_size_hints(state_t *s, client_t *cl);
 void client_kill(state_t *s, client_t *cl);
 client_t *client_kill_next_focus(state_t *s);

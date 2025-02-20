@@ -33,6 +33,11 @@ void monitors_setup(state_t *s) {
 
     monitor->layout = DEFAULT_LAYOUT;
 
+    monitor->padding.top = SCREEN_GAP;
+    monitor->padding.left = SCREEN_GAP;
+    monitor->padding.bottom = SCREEN_GAP;
+    monitor->padding.right = SCREEN_GAP;
+
     monitor->x = monitors_iter.data->x;
     monitor->y = monitors_iter.data->y;
     monitor->width = monitors_iter.data->width;

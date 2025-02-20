@@ -40,27 +40,28 @@ void main_tiled(state_t *s, int length) {
   client_t *cl = s->clients;
   int i, mw, ty, x, y, w, h;
 
-  mw = length > 1 ? s->monitor_focus->width * MAIN_WINDOW_AREA -
-                        (LAYOUT_GAP / 2) - SCREEN_GAP
-                  : s->monitor_focus->width - (2 * SCREEN_GAP);
-  ty = SCREEN_GAP + 1;
+  int bw = 2 * BORDER_WIDTH;
+  monitor_t *mon = s->monitor_focus;
+  padding_t pad = mon->padding;
+
+  mw = length > 1 ? mon->width * MAIN_WINDOW_AREA - (LAYOUT_GAP / 2) - pad.left
+                  : mon->width - pad.left - pad.right;
+  ty = pad.top + 1;
 
   for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
     if (i < 1) {
-      x = s->monitor_focus->x + SCREEN_GAP;
-      y = s->monitor_focus->y + ty;
-      w = mw - (2 * BORDER_WIDTH);
-      h = s->monitor_focus->height - (2 * BORDER_WIDTH) - (2 * SCREEN_GAP) - 1;
+      x = mon->x + pad.right;
+      y = mon->y + ty;
+      w = mw - bw;
+      h = mon->height - bw - pad.top - pad.bottom - 1;
       client_move_resize(s, cl, x, y, w, h);
     } else {
-      x = s->monitor_focus->x + mw + LAYOUT_GAP + SCREEN_GAP;
-      y = s->monitor_focus->y + ty;
-      w = s->monitor_focus->width - mw - LAYOUT_GAP - (2 * SCREEN_GAP) -
-          (2 * BORDER_WIDTH);
-      h = (s->monitor_focus->height - ty - SCREEN_GAP) / (length - i) -
-          (2 * BORDER_WIDTH);
+      x = mon->x + mw + LAYOUT_GAP + pad.left;
+      y = mon->y + ty;
+      w = mon->width - mw - bw - LAYOUT_GAP - pad.left - pad.right;
+      h = (mon->height - ty - pad.bottom) / (length - i) - bw;
       client_move_resize(s, cl, x, y, w, h);
-      ty += cl->height + 2 * BORDER_WIDTH + LAYOUT_GAP;
+      ty += cl->height + bw + LAYOUT_GAP;
     }
   }
 }
