@@ -18,10 +18,7 @@
 void main_loop(state_t *s) {
   xcb_generic_event_t *event;
   while (s->c && !xcb_connection_has_error(s->c)) {
-    event = xcb_poll_for_event(s->c);
-    if (!event) {
-      continue;
-    }
+    event = xcb_wait_for_event(s->c);
 
     uint8_t event_type = XCB_EVENT_RESPONSE_TYPE(event);
 
