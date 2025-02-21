@@ -178,8 +178,8 @@ void make_dock(state_t *s, xcb_window_t wid) {
       int bottom_end_x = strut[11];
 
       for (monitor_t *mon = s->monitors; mon != NULL; mon = mon->next) {
-        if ((left > 0) && (left > mon->x) &&
-            (left_start_y <= mon->y + mon->height) && (left_end_y >= mon->y)) {
+        if ((left > mon->x) && (left < mon->x + mon->width - 1) &&
+            (left_start_y < mon->y + mon->height) && (left_end_y >= mon->y)) {
           int dx = left - mon->x;
           if (mon->padding.left <= 0) {
             mon->padding.left += dx;
@@ -190,7 +190,7 @@ void make_dock(state_t *s, xcb_window_t wid) {
 
         if ((mon->x + mon->width > s->screen->width_in_pixels - right) &&
             (s->screen->width_in_pixels - right > mon->x) &&
-            (right_start_y < mon->x + mon->width) && (right_end_y >= mon->y)) {
+            (right_start_y < mon->y + mon->height) && (right_end_y >= mon->y)) {
           int dx = mon->x + mon->width - s->screen->width_in_pixels + right;
           if (mon->padding.right <= 0) {
             mon->padding.right += dx;
@@ -200,7 +200,7 @@ void make_dock(state_t *s, xcb_window_t wid) {
           }
         }
 
-        if ((top > 0) && (mon->y <= top) && (top < mon->y + mon->height - 1) &&
+        if ((mon->y < top) && (top < mon->y + mon->height - 1) &&
             (top_start_x < mon->x + mon->width) && (top_end_x >= mon->x)) {
           int dy = top - mon->y;
           if (mon->padding.top <= 0) {
@@ -210,7 +210,8 @@ void make_dock(state_t *s, xcb_window_t wid) {
           }
         }
 
-        if ((bottom > 0) && (mon->height - bottom > mon->y) &&
+        if ((mon->y + mon->height > s->screen->height_in_pixels - bottom) &&
+            (s->screen->height_in_pixels - bottom > mon->y) &&
             (bottom_start_x < mon->x + mon->width) &&
             (bottom_end_x >= mon->x)) {
           int dy = mon->y + bottom;
@@ -373,10 +374,13 @@ void client_move(state_t *s, client_t *cl, int x, int y) {
 void client_apply_size(state_t *s, client_t *cl, int x, int y, int width,
                        int height) {
 
-  x = width > cl->size_hints.min_width ? x : cl->x;
-  y = height > cl->size_hints.min_height ? y : cl->y;
-  width = width > cl->size_hints.min_width ? width : cl->width;
-  height = height > cl->size_hints.min_height ? height : cl->height;
+  x = (width > cl->size_hints.min_width) || (cl->width < width) ? x : cl->x;
+  y = height > cl->size_hints.min_height || (cl->height < height) ? y : cl->y;
+  width = width > cl->size_hints.min_width || (cl->width < width) ? width
+                                                                  : cl->width;
+  height = height > cl->size_hints.min_height || (cl->height < height)
+               ? height
+               : cl->height;
 
   cl->x = width < cl->size_hints.max_width ? x : cl->x;
   cl->y = height < cl->size_hints.max_height ? y : cl->y;

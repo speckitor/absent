@@ -102,7 +102,7 @@ void swapfocusdown(state_t *s, const char *command) {
   if (s->focus) {
     client_t *cl = s->focus->next;
     while (cl && (cl->fullscreen || cl->floating ||
-                  cl->monitor != s->focus->monitor)) {
+                  cl->monitor != s->monitor_focus)) {
       cl = cl->next;
     }
 

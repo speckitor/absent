@@ -53,7 +53,9 @@ void unmap_notify(state_t *s, xcb_generic_event_t *ev) {
 
   client_remove(s, e->window);
 
-  make_layout(s);
+  if (!cl->floating) {
+    make_layout(s);
+  }
 
   button_release(s);
 

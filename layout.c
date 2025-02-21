@@ -44,21 +44,25 @@ void main_tiled(state_t *s, int length) {
   monitor_t *mon = s->monitor_focus;
   padding_t pad = mon->padding;
 
-  mw = length > 1 ? mon->width * MAIN_WINDOW_AREA - (LAYOUT_GAP / 2) - pad.left
+  int lg_not_even = LAYOUT_GAP % 2 == 0 ? 0 : 1;
+
+  mw = length > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA -
+                        (LAYOUT_GAP / 2)
                   : mon->width - pad.left - pad.right;
   ty = pad.top + 1;
 
   for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
     if (i < 1) {
-      x = mon->x + pad.right;
+      x = mon->x + pad.left;
       y = mon->y + ty;
       w = mw - bw;
       h = mon->height - bw - pad.top - pad.bottom - 1;
       client_move_resize(s, cl, x, y, w, h);
     } else {
-      x = mon->x + mw + LAYOUT_GAP + pad.left;
+      x = mon->x + mw + (LAYOUT_GAP / 2) + pad.left + (2 * lg_not_even);
       y = mon->y + ty;
-      w = mon->width - mw - bw - LAYOUT_GAP - pad.left - pad.right;
+      w = mon->width - mw - bw - LAYOUT_GAP - pad.left - pad.right +
+          lg_not_even;
       h = (mon->height - ty - pad.bottom) / (length - i) - bw;
       client_move_resize(s, cl, x, y, w, h);
       ty += cl->height + bw + LAYOUT_GAP;
