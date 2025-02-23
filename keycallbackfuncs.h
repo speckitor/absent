@@ -3,9 +3,10 @@
 
 #include "types.h"
 
-void spawnclient(state_t *s, const char *command);
+void run(state_t *s, const char *command);
 void cyclefocusdown(state_t *s, const char *command);
 void cyclefocusup(state_t *s, const char *command);
+void setlayout(state_t *s, const char *command);
 void settiled(state_t *s, const char *command);
 void swapmainfocus(state_t *s, const char *command);
 void swapfocusdown(state_t *s, const char *command);

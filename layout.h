@@ -5,7 +5,7 @@
 
 void make_layout(state_t *s);
 
-void main_tiled(state_t *s, int length);
+void tiled(state_t *s, int length);
 void vertical(state_t *s, int length);
 void horizontal(state_t *s, int length);
 

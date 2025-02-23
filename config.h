@@ -6,8 +6,8 @@
 #include "keycallbackfuncs.h"
 #include "types.h"
 
-// there are MAIN_TILED, VERTICAL and HORIZONTAL layouts
-#define DEFAULT_LAYOUT MAIN_TILED
+// there are TILED, VERTICAL and HORIZONTAL layouts
+#define DEFAULT_LAYOUT TILED
 
 // gap between root window and windows layout
 #define SCREEN_GAP 10
@@ -19,7 +19,7 @@
 #define MAIN_WINDOW_AREA 0.5
 
 // new window opens as main window
-#define SET_NEW_WINDOW_MAIN 0
+#define SET_NEW_WINDOW_MAIN 1
 
 #define MIN_WINDOW_WIDTH 100
 #define MIN_WINDOW_HEIGHT 100
@@ -39,12 +39,15 @@
 // 1 for enable, 0 for disable
 #define ENABLE_AUTOSTART 1
 
-static keybind_t keybinds[] = {{XK_Return, SUPER, spawnclient, "kitty"},
-                               {XK_v, SUPER, spawnclient, "vesktop"},
-                               {XK_f, SUPER, spawnclient, "firefox"},
-                               {XK_space, ALT, spawnclient, "rofi -show drun"},
+static keybind_t keybinds[] = {{XK_Return, SUPER, run, "kitty"},
+                               {XK_v, SUPER, run, "vesktop"},
+                               {XK_f, SUPER, run, "firefox"},
+                               {XK_space, ALT, run, "rofi -show drun"},
                                {XK_j, SUPER, cyclefocusdown, NULL},
                                {XK_k, SUPER, cyclefocusup, NULL},
+                               {XK_t, SUPER | SHIFT, setlayout, "TILED"},
+                               {XK_v, SUPER | SHIFT, setlayout, "VERTICAL"},
+                               {XK_h, SUPER | SHIFT, setlayout, "HORIZONTAL"},
                                {XK_t, SUPER, settiled, NULL},
                                {XK_s, SUPER, swapmainfocus, NULL},
                                {XK_j, SUPER | SHIFT, swapfocusdown, NULL},

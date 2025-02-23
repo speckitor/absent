@@ -1,12 +1,15 @@
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "absent.h"
 #include "clients.h"
+#include "keycallbackfuncs.h"
 #include "layout.h"
 #include "monitors.h"
+#include "types.h"
 
-void spawnclient(state_t *s, const char *command) {
+void run(state_t *s, const char *command) {
   if (fork() == 0) {
     execl("/bin/sh", "sh", "-c", command, (char *)NULL);
     _exit(EXIT_FAILURE);
@@ -71,6 +74,20 @@ void cyclefocusup(state_t *s, const char *command) {
     if (target) {
       client_focus(s, target);
     }
+  }
+}
+
+void setlayout(state_t *s, const char *command) {
+  if (s->monitor_focus) {
+    if (strcmp(command, "TILED") == 0) {
+      s->monitor_focus->layout = TILED;
+    } else if (strcmp(command, "VERTICAL") == 0) {
+      s->monitor_focus->layout = VERTICAL;
+    } else if (strcmp(command, "HORIZONTAL") == 0) {
+      s->monitor_focus->layout = HORIZONTAL;
+    }
+
+    make_layout(s);
   }
 }
 

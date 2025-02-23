@@ -15,7 +15,7 @@ typedef struct {
   const char *command;
 } keybind_t;
 
-typedef enum { MAIN_TILED, VERTICAL, HORIZONTAL } layout_t;
+typedef enum { TILED, VERTICAL, HORIZONTAL } layout_t;
 
 typedef struct monitor_t monitor_t;
 
