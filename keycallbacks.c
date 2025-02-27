@@ -4,10 +4,10 @@
 
 #include "absent.h"
 #include "clients.h"
-#include "keycallbackfuncs.h"
+#include "desktops.h"
+#include "keycallbacks.h"
 #include "layout.h"
 #include "monitors.h"
-#include "types.h"
 
 void run(state_t *s, const char *command) {
   if (fork() == 0) {
@@ -22,7 +22,8 @@ void cyclefocusdown(state_t *s, const char *command) {
     client_t *next = NULL;
 
     while (cl) {
-      if (cl->monitor == s->monitor_focus) {
+      if (cl->monitor == s->monitor_focus &&
+          cl->desktop_idx == s->monitor_focus->desktop_idx) {
         next = cl;
         break;
       }
@@ -32,7 +33,8 @@ void cyclefocusdown(state_t *s, const char *command) {
     if (!next) {
       cl = s->clients;
       while (cl) {
-        if (cl->monitor == s->monitor_focus) {
+        if (cl->monitor == s->monitor_focus &&
+            cl->desktop_idx == s->monitor_focus->desktop_idx) {
           next = cl;
           break;
         }
@@ -57,14 +59,18 @@ void cyclefocusup(state_t *s, const char *command) {
         target = prev;
         break;
       }
-      prev = cl->monitor == s->monitor_focus ? cl : prev;
+      prev = cl->monitor == s->monitor_focus &&
+                     cl->desktop_idx == s->monitor_focus->desktop_idx
+                 ? cl
+                 : prev;
       cl = cl->next;
     }
 
     if (!target) {
       cl = s->clients;
       while (cl) {
-        if (cl->monitor == s->monitor_focus) {
+        if (cl->monitor == s->monitor_focus &&
+            cl->desktop_idx == s->monitor_focus->desktop_idx) {
           target = cl;
         }
         cl = cl->next;
@@ -77,14 +83,27 @@ void cyclefocusup(state_t *s, const char *command) {
   }
 }
 
+void setcurrentdesktop(state_t *s, const char *command) {
+  if (s->monitor_focus) {
+    switch_desktop(s, command);
+  }
+}
+
+void movefocustodesktop(state_t *s, const char *command) {
+  if (s->focus) {
+    client_move_to_desktop(s, command);
+  }
+}
+
 void setlayout(state_t *s, const char *command) {
   if (s->monitor_focus) {
+    monitor_t *mon = s->monitor_focus;
     if (strcmp(command, "TILED") == 0) {
-      s->monitor_focus->layout = TILED;
+      mon->desktops[mon->desktop_idx].layout = TILED;
     } else if (strcmp(command, "VERTICAL") == 0) {
-      s->monitor_focus->layout = VERTICAL;
+      mon->desktops[mon->desktop_idx].layout = VERTICAL;
     } else if (strcmp(command, "HORIZONTAL") == 0) {
-      s->monitor_focus->layout = HORIZONTAL;
+      mon->desktops[mon->desktop_idx].layout = HORIZONTAL;
     }
 
     make_layout(s);
@@ -102,7 +121,8 @@ void swapmainfocus(state_t *s, const char *command) {
   if (s->focus && s->focus->monitor == monitor_contains_cursor(s)) {
     client_t *cl = s->clients;
     while (cl && (cl->fullscreen || cl->floating ||
-                  cl->monitor != s->focus->monitor)) {
+                  cl->monitor != s->focus->monitor ||
+                  cl->desktop_idx != s->focus->desktop_idx)) {
       cl = cl->next;
     }
 
@@ -118,8 +138,9 @@ void swapmainfocus(state_t *s, const char *command) {
 void swapfocusdown(state_t *s, const char *command) {
   if (s->focus) {
     client_t *cl = s->focus->next;
-    while (cl && (cl->fullscreen || cl->floating ||
-                  cl->monitor != s->monitor_focus)) {
+    while (cl &&
+           (cl->fullscreen || cl->floating || cl->monitor != s->monitor_focus ||
+            cl->desktop_idx != s->monitor_focus->desktop_idx)) {
       cl = cl->next;
     }
 
@@ -135,7 +156,8 @@ void swapfocusup(state_t *s, const char *command) {
     client_t *prev = NULL;
     client_t *cl = s->clients;
     while (cl != s->focus) {
-      if (!cl->fullscreen && !cl->floating && cl->monitor == s->monitor_focus) {
+      if (!cl->fullscreen && !cl->floating && cl->monitor == s->monitor_focus &&
+          cl->desktop_idx == s->monitor_focus->desktop_idx) {
         prev = cl;
       }
       cl = cl->next;
@@ -174,8 +196,10 @@ void killclient(state_t *s, const char *command) {
 }
 
 void fullscreen(state_t *s, const char *command) {
-  int fullscreen = s->focus->fullscreen == 1 ? 0 : 1;
-  client_fullscreen(s, s->focus, fullscreen);
+  if (s->focus) {
+    int fullscreen = s->focus->fullscreen == 1 ? 0 : 1;
+    client_fullscreen(s, s->focus, fullscreen);
+  }
 }
 
 void killwm(state_t *s, const char *command) {

@@ -14,7 +14,13 @@
 void client_create(state_t *s, xcb_window_t wid) {
   s->monitor_focus = monitor_contains_cursor(s);
 
-  int is_dock = 0;
+  client_t *clients = s->clients;
+  while (clients) {
+    if (clients->wid == wid) {
+      return;
+    }
+    clients = clients->next;
+  }
 
   int floating = 0;
 
@@ -29,46 +35,45 @@ void client_create(state_t *s, xcb_window_t wid) {
     if (type_reply->type == XCB_ATOM_ATOM && type_reply->format == 32 &&
         type_reply->value_len > 0) {
       xcb_atom_t *atoms = xcb_get_property_value(type_reply);
-      int len = xcb_get_property_value_length(type_reply) / sizeof(xcb_atom_t);
 
-      for (int i = 0; i < len; i++) {
-        if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_NORMAL]) {
-          floating = 0;
-          break;
-        } else if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_DOCK]) {
-          is_dock = 1;
-          break;
-        } else {
-          floating = 1;
-        }
+      if (atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_NORMAL]) {
+        floating = 0;
+      } else if (atoms[0] == s->ewmh[EWMH_WINODW_TYPE_DIALOG]) {
+        floating = 1;
+      } else if (atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_DOCK]) {
+        make_dock(s, wid);
+        return;
+      } else if (atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_DESKTOP] ||
+                 atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_MENU] ||
+                 atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_SPLASH] ||
+                 atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_TOOLBAR] ||
+                 atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_UTILITY]) {
+        xcb_map_window(s->c, wid);
+        xcb_flush(s->c);
+        return;
+      } else {
+        floating = 0;
       }
     }
-    free(type_reply);
-  } else {
-    floating = 0;
   }
-
-  if (is_dock) {
-    make_dock(s, wid);
-    return;
-  }
+  free(type_reply);
 
   client_t *cl = calloc(1, sizeof(client_t));
 
   cl->wid = wid;
 
   cl->fullscreen = 0;
-
   cl->floating = floating;
+  cl->hidden = 0;
 
   if (type_error) {
     free(type_error);
   }
 
   cl->monitor = s->monitor_focus;
+  cl->desktop_idx = cl->monitor->desktop_idx;
 
-  client_t *clients = s->clients;
-
+  clients = s->clients;
   if (!clients || SET_NEW_WINDOW_MAIN) {
     cl->next = s->clients;
     s->clients = cl;
@@ -267,7 +272,8 @@ client_t *client_kill_next_focus(state_t *s) {
   if (s->focus) {
     client_t *next = s->focus->next;
     while (next && (next->fullscreen || next->floating ||
-                    next->monitor != s->monitor_focus)) {
+                    next->monitor != s->monitor_focus ||
+                    next->desktop_idx != s->monitor_focus->desktop_idx)) {
       next = next->next;
     }
 
@@ -276,7 +282,8 @@ client_t *client_kill_next_focus(state_t *s) {
       client_t *tmp = s->clients;
       while (tmp != s->focus) {
         if (!tmp->floating && !tmp->fullscreen &&
-            tmp->monitor == s->focus->monitor) {
+            tmp->monitor == s->focus->monitor &&
+            tmp->desktop_idx == s->focus->desktop_idx) {
           next = tmp;
         }
         tmp = tmp->next;

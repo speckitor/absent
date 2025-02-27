@@ -14,7 +14,8 @@ void make_layout(state_t *s) {
   int length = 0;
 
   while (cl) {
-    if (cl->monitor == mon && !cl->floating && !cl->fullscreen) {
+    if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx &&
+        !cl->floating && !cl->fullscreen && !cl->hidden) {
       length++;
     }
     cl = cl->next;
@@ -24,7 +25,7 @@ void make_layout(state_t *s) {
     return;
   }
 
-  switch (mon->layout) {
+  switch (mon->desktops[mon->desktop_idx].layout) {
   case TILED:
     tiled(s, length);
     break;
@@ -35,6 +36,7 @@ void make_layout(state_t *s) {
     horizontal(s, length);
     break;
   }
+  xcb_flush(s->c);
 }
 
 void tiled(state_t *s, int length) {
@@ -112,7 +114,8 @@ void horizontal(state_t *s, int length) {
 
 client_t *next_tiled(state_t *s, client_t *cl) {
   while (cl &&
-         (cl->floating || cl->fullscreen || s->monitor_focus != cl->monitor)) {
+         (cl->floating || cl->fullscreen || s->monitor_focus != cl->monitor ||
+          s->monitor_focus->desktop_idx != cl->desktop_idx)) {
     cl = cl->next;
   }
   return cl;

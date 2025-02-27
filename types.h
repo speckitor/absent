@@ -15,6 +15,11 @@ typedef struct {
   const char *command;
 } keybind_t;
 
+typedef struct {
+  const char monitor_name[16];
+  const char *desktop_names[10];
+} desktop_config_t;
+
 typedef enum { TILED, VERTICAL, HORIZONTAL } layout_t;
 
 typedef struct monitor_t monitor_t;
@@ -22,11 +27,19 @@ typedef struct monitor_t monitor_t;
 typedef struct client_t client_t;
 
 typedef struct {
+  int desktop_id;
+  char name[16];
+  layout_t layout;
+} desktop_t;
+
+typedef struct {
   int left, right, top, bottom;
 } padding_t;
 
 struct monitor_t {
-  layout_t layout;
+  desktop_t *desktops;
+  int desktop_idx;
+  int number_desktops;
 
   padding_t padding;
   int x, y;
@@ -51,9 +64,10 @@ struct client_t {
 
   size_hints_t size_hints;
 
-  int fullscreen, floating, tile;
+  int fullscreen, floating, hidden;
 
   monitor_t *monitor;
+  int desktop_idx;
 
   client_t *next;
 };
@@ -83,12 +97,21 @@ typedef enum {
 typedef enum {
   EWMH_SUPPORTED = 0,
   EWMH_CLIENT_LIST,
+  EWMH_CURRENT_DESKTOP,
+  EWMH_NUMBER_OF_DESKTOPS,
+  EWMH_DESKTOP_NAMES,
   EWMH_NAME,
   EWMH_ACTIVE_WINDOW,
   EWMH_STATE,
   EWMH_FULLSCREEN,
   EWMH_WINDOW_TYPE,
+  EWMH_WINDOW_TYPE_DESKTOP,
+  EWMH_WINDOW_TYPE_UTILITY,
+  EWMH_WINDOW_TYPE_SPLASH,
+  EWMH_WINDOW_TYPE_MENU,
+  EWMH_WINDOW_TYPE_TOOLBAR,
   EWMH_WINDOW_TYPE_NORMAL,
+  EWMH_WINODW_TYPE_DIALOG,
   EWMH_WINDOW_TYPE_DOCK,
   EWMH_STRUT_PARTIAL,
   EWMH_CHECK,
@@ -108,6 +131,8 @@ struct state_t {
 
   monitor_t *monitors;
   monitor_t *monitor_focus;
+
+  int number_desktops;
 
   float lastmotiontime;
   mouse_t *mouse;

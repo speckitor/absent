@@ -8,6 +8,7 @@
 
 #include "absent.h"
 #include "config.h"
+#include "desktops.h"
 #include "events.h"
 #include "keys.h"
 #include "monitors.h"
@@ -27,6 +28,8 @@ void setup(state_t *s) {
 
   s->monitors = NULL;
   s->monitor_focus = NULL;
+
+  s->number_desktops = 0;
 
   s->lastmotiontime = 0.0;
   s->mouse = calloc(1, sizeof(mouse_t));
@@ -75,6 +78,16 @@ void setup(state_t *s) {
   }
 
   monitors_setup(s);
+  s->monitor_focus = monitor_contains_cursor(s);
+
+  xcb_change_property(
+      s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
+      XCB_ATOM_CARDINAL, 32, 1,
+      &s->monitor_focus->desktops[s->monitor_focus->desktop_idx].desktop_id);
+
+  xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root,
+                      s->ewmh[EWMH_NUMBER_OF_DESKTOPS], XCB_ATOM_CARDINAL, 32,
+                      1, &s->number_desktops);
 
   xcb_flush(s->c);
 }
@@ -94,12 +107,24 @@ void setup_atoms(state_t *s) {
 
   s->ewmh[EWMH_SUPPORTED] = get_atom(s, "_NET_WM_SUPPORTED");
   s->ewmh[EWMH_CLIENT_LIST] = get_atom(s, "_NET_CLIENT_LIST");
+  s->ewmh[EWMH_CURRENT_DESKTOP] = get_atom(s, "_NET_CURRENT_DESKTOP");
+  s->ewmh[EWMH_NUMBER_OF_DESKTOPS] = get_atom(s, "_NET_NUMBER_OF_DESKTOPS");
+  s->ewmh[EWMH_DESKTOP_NAMES] = get_atom(s, "_NET_DESKTOP_NAMES");
   s->ewmh[EWMH_NAME] = get_atom(s, "_NET_WM_NAME");
   s->ewmh[EWMH_ACTIVE_WINDOW] = get_atom(s, "_NET_ACTIVE_WINDOW");
   s->ewmh[EWMH_STATE] = get_atom(s, "_NET_WM_STATE");
   s->ewmh[EWMH_FULLSCREEN] = get_atom(s, "_NET_WM_STATE_FULLSCREEN");
   s->ewmh[EWMH_WINDOW_TYPE] = get_atom(s, "_NET_WM_WINDOW_TYPE");
+  s->ewmh[EWMH_WINDOW_TYPE_DESKTOP] =
+      get_atom(s, "_NET_WM_WINDOW_TYPE_DESKTOP");
+  s->ewmh[EWMH_WINDOW_TYPE_UTILITY] =
+      get_atom(s, "_NET_WM_WINDOW_TYPE_UTILITY");
+  s->ewmh[EWMH_WINDOW_TYPE_SPLASH] = get_atom(s, "_NET_WM_WINDOW_TYPE_SPLASH");
+  s->ewmh[EWMH_WINDOW_TYPE_MENU] = get_atom(s, "_NET_WM_WINDOW_TYPE_MENU");
+  s->ewmh[EWMH_WINDOW_TYPE_TOOLBAR] =
+      get_atom(s, "_NET_WM_WINDOW_TYPE_TOOLBAR");
   s->ewmh[EWMH_WINDOW_TYPE_NORMAL] = get_atom(s, "_NET_WM_WINDOW_TYPE_NORMAL");
+  s->ewmh[EWMH_WINODW_TYPE_DIALOG] = get_atom(s, "_NET_WM_WINDOW_TYPE_DIALOG");
   s->ewmh[EWMH_WINDOW_TYPE_DOCK] = get_atom(s, "_NET_WM_WINDOW_TYPE_DOCK");
   s->ewmh[EWMH_STRUT_PARTIAL] = get_atom(s, "_NET_WM_STRUT_PARTIAL");
   s->ewmh[EWMH_CHECK] = get_atom(s, "_NET_SUPPORTING_WM_CHECK");
@@ -145,6 +170,7 @@ void clean(state_t *s) {
 
   while (monitors) {
     next_monitor = monitors->next;
+    free(monitors->desktops);
     free(monitors);
     monitors = next_monitor;
   }

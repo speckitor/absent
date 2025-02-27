@@ -3,7 +3,6 @@
 #include <stdlib.h>
 
 #include <xcb/xcb.h>
-#include <xcb/xcb_event.h>
 #include <xcb/xcb_icccm.h>
 #include <xcb/xproto.h>
 
@@ -20,7 +19,7 @@ void main_loop(state_t *s) {
   while (s->c && !xcb_connection_has_error(s->c)) {
     event = xcb_wait_for_event(s->c);
 
-    uint8_t event_type = XCB_EVENT_RESPONSE_TYPE(event);
+    uint8_t event_type = event->response_type & ~0x80;
 
     if (event_type < XCB_LAST_EVENT && handlers[event_type]) {
       handlers[event_type](s, event);
@@ -39,17 +38,17 @@ void map_request(state_t *s, xcb_generic_event_t *ev) {
 void unmap_notify(state_t *s, xcb_generic_event_t *ev) {
   xcb_unmap_notify_event_t *e = (xcb_unmap_notify_event_t *)ev;
 
-  xcb_unmap_window(s->c, e->window);
-
   client_t *cl = client_from_wid(s, e->window);
 
-  if (!cl) {
+  if (!cl || cl->hidden) {
     return;
   }
 
   if (cl->monitor != s->monitor_focus) {
     s->monitor_focus = cl->monitor;
   }
+
+  xcb_unmap_window(s->c, e->window);
 
   client_remove(s, e->window);
 
@@ -154,10 +153,22 @@ void key_press(state_t *s, xcb_generic_event_t *ev) {
       keybinds[i].callback(s, keybinds[i].command);
     }
   }
+
+  s->monitor_focus = monitor_contains_cursor(s);
+  xcb_change_property(
+      s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
+      XCB_ATOM_CARDINAL, 32, 1,
+      &s->monitor_focus->desktops[s->monitor_focus->desktop_idx].desktop_id);
 }
 
 void button_press(state_t *s, xcb_generic_event_t *ev) {
   xcb_button_press_event_t *e = (xcb_button_press_event_t *)ev;
+
+  s->monitor_focus = monitor_contains_cursor(s);
+  xcb_change_property(
+      s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
+      XCB_ATOM_CARDINAL, 32, 1,
+      &s->monitor_focus->desktops[s->monitor_focus->desktop_idx].desktop_id);
 
   client_t *cl = client_from_wid(s, e->event);
 
@@ -207,14 +218,14 @@ void motion_notify(state_t *s, xcb_generic_event_t *ev) {
     return;
   }
 
-  s->monitor_focus = monitor_contains_cursor(s);
-
   if (s->mouse->pressed_button == 0) {
     return;
   }
 
   if (s->mouse->pressed_button == 1) {
+    s->monitor_focus = monitor_contains_cursor(s);
     s->focus->monitor = s->monitor_focus;
+    s->focus->desktop_idx = s->monitor_focus->desktop_idx;
     int x = s->focus->x + (e->root_x - s->mouse->root_x);
     int y = s->focus->y + (e->root_y - s->mouse->root_y);
     client_move(s, s->focus, x, y);

@@ -2,4 +2,3 @@ xrandr --output HDMI-1-1 --mode 1920x1080 --rate 144 --primary --output eDP-1-1 
 setxkbmap -layout "us,ru" -option "grp:win_space_toggle" &
 nitrogen --restore &
 polybar &
-picom -b

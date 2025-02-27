@@ -1,8 +1,14 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <xcb/randr.h>
+#include <xcb/xcb.h>
 
 #include "absent.h"
 #include "config.h"
+#include "desktops.h"
 #include "monitors.h"
+#include "types.h"
 
 void monitors_setup(state_t *s) {
   const xcb_query_extension_reply_t *extension =
@@ -13,44 +19,119 @@ void monitors_setup(state_t *s) {
     return;
   }
 
-  xcb_randr_get_monitors_cookie_t monitors_cookie =
-      xcb_randr_get_monitors(s->c, s->root, 1);
-  xcb_randr_get_monitors_reply_t *monitors_reply =
-      xcb_randr_get_monitors_reply(s->c, monitors_cookie, NULL);
+  xcb_randr_get_screen_resources_current_cookie_t res_cookie =
+      xcb_randr_get_screen_resources_current(s->c, s->root);
+  xcb_randr_get_screen_resources_current_reply_t *res_reply =
+      xcb_randr_get_screen_resources_current_reply(s->c, res_cookie, NULL);
 
-  if (!monitors_reply) {
+  if (!res_reply) {
     xcb_disconnect(s->c);
     clean(s);
     return;
   }
 
-  int monitors_length = xcb_randr_get_monitors_monitors_length(monitors_reply);
-  xcb_randr_monitor_info_iterator_t monitors_iter =
-      xcb_randr_get_monitors_monitors_iterator(monitors_reply);
+  int32_t number_outputs =
+      xcb_randr_get_screen_resources_current_outputs_length(res_reply);
+  xcb_randr_output_t *outputs =
+      xcb_randr_get_screen_resources_current_outputs(res_reply);
 
-  while (monitors_length) {
+  for (int i = 0; i < number_outputs; i++) {
+    xcb_randr_get_output_info_cookie_t output_cookie =
+        xcb_randr_get_output_info(s->c, outputs[i], XCB_CURRENT_TIME);
+    xcb_randr_get_output_info_reply_t *output_reply =
+        xcb_randr_get_output_info_reply(s->c, output_cookie, NULL);
+
+    if (!output_reply || output_reply->crtc == XCB_NONE) {
+      continue;
+    }
+
+    xcb_randr_get_crtc_info_cookie_t crtc_cookie =
+        xcb_randr_get_crtc_info(s->c, output_reply->crtc, XCB_CURRENT_TIME);
+    xcb_randr_get_crtc_info_reply_t *crtc_reply =
+        xcb_randr_get_crtc_info_reply(s->c, crtc_cookie, NULL);
+
+    if (!crtc_reply) {
+      free(output_reply);
+      continue;
+    }
+
+    const char *monitor_name =
+        (const char *)xcb_randr_get_output_info_name(output_reply);
+
+    FILE *ptr;
+    ptr = fopen("/home/spectr/abs.log", "w");
+    fprintf(ptr, "%s\n", monitor_name);
+    fclose(ptr);
+
     monitor_t *monitor = calloc(1, sizeof(monitor_t));
-
-    monitor->layout = DEFAULT_LAYOUT;
 
     monitor->padding.top = SCREEN_GAP;
     monitor->padding.left = SCREEN_GAP;
     monitor->padding.bottom = SCREEN_GAP;
     monitor->padding.right = SCREEN_GAP;
 
-    monitor->x = monitors_iter.data->x;
-    monitor->y = monitors_iter.data->y;
-    monitor->width = monitors_iter.data->width;
-    monitor->height = monitors_iter.data->height;
+    monitor->x = crtc_reply->x;
+    monitor->y = crtc_reply->y;
+    monitor->width = crtc_reply->width;
+    monitor->height = crtc_reply->height;
 
     monitor->next = s->monitors;
     s->monitors = monitor;
 
-    xcb_randr_monitor_info_next(&monitors_iter);
-    monitors_length--;
+    int desktops_setuped = 0;
+
+    for (int j = 0; j < sizeof(desktops) / sizeof(desktop_config_t); j++) {
+      if (strncmp(monitor_name, desktops[j].monitor_name,
+                  strlen(desktops[j].monitor_name)) == 0) {
+        desktops_setuped = 1;
+
+        int number_desktops = 0;
+
+        for (int k = 0; k < sizeof(desktops[j].desktop_names) /
+                                sizeof(desktops[j].desktop_names[0]);
+             k++) {
+          if (!desktops[j].desktop_names[k]) {
+            break;
+          }
+          number_desktops++;
+        }
+
+        monitor->desktops = calloc(number_desktops, sizeof(desktop_t));
+        monitor->number_desktops = number_desktops;
+
+        for (int k = 0; k < number_desktops; k++) {
+          monitor->desktops[k].desktop_id = s->number_desktops;
+          s->number_desktops++;
+          snprintf(monitor->desktops[k].name, sizeof(monitor->desktops[k].name),
+                   "%s", desktops[j].desktop_names[k]);
+          monitor->desktops[k].layout = DEFAULT_LAYOUT;
+        }
+      }
+    }
+
+    if (!desktops_setuped) {
+      int number_desktops = 10;
+
+      monitor->desktops = calloc(number_desktops, sizeof(desktop_t));
+      monitor->number_desktops = number_desktops;
+
+      for (int k = 0; k < number_desktops; k++) {
+        monitor->desktops[k].desktop_id = s->number_desktops;
+        s->number_desktops++;
+        snprintf(monitor->desktops[k].name, sizeof(monitor->desktops[k].name),
+                 "%d", k + 1);
+        monitor->desktops[k].layout = DEFAULT_LAYOUT;
+      }
+    }
+
+    monitor->desktop_idx = 0;
+    setup_desktop_names(s, monitor);
+
+    free(crtc_reply);
+    free(output_reply);
   }
 
-  free(monitors_reply);
+  free(res_reply);
   xcb_flush(s->c);
 }
 
