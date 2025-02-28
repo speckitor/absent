@@ -51,7 +51,7 @@ void switch_desktop(state_t *s, const char *name) {
         continue;
       }
       for (int i = 0; i < mon->number_desktops; i++) {
-        if (strcmp(mon->desktops[i].name, name) == 0) {
+        if (strcmp(mon->desktops[i].name, name) == 0 && mon->desktop_idx != i) {
           desktop_idx = i;
           desktop_id = mon->desktops[i].desktop_id;
           break;
