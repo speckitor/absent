@@ -58,11 +58,6 @@ void monitors_setup(state_t *s) {
     const char *monitor_name =
         (const char *)xcb_randr_get_output_info_name(output_reply);
 
-    FILE *ptr;
-    ptr = fopen("/home/spectr/abs.log", "w");
-    fprintf(ptr, "%s\n", monitor_name);
-    fclose(ptr);
-
     monitor_t *monitor = calloc(1, sizeof(monitor_t));
 
     monitor->padding.top = SCREEN_GAP;
