@@ -51,7 +51,7 @@ void switch_desktop(state_t *s, const char *name) {
         continue;
       }
       for (int i = 0; i < mon->number_desktops; i++) {
-        if (strcmp(mon->desktops[i].name, name) == 0 && mon->desktop_idx != i) {
+        if (strcmp(mon->desktops[i].name, name) == 0) {
           desktop_idx = i;
           desktop_id = mon->desktops[i].desktop_id;
           break;
@@ -72,7 +72,7 @@ void switch_desktop(state_t *s, const char *name) {
 
   while (cl) {
     if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx &&
-        !cl->hidden) {
+        !cl->hidden && cl->desktop_idx != desktop_idx) {
       hide_client(s, cl);
     } else if (cl->monitor == mon && cl->desktop_idx == desktop_idx &&
                cl->hidden) {
@@ -80,7 +80,12 @@ void switch_desktop(state_t *s, const char *name) {
     }
     cl = cl->next;
   }
-  s->monitor_focus = mon;
+
+  if (s->monitor_focus != mon) {
+    s->monitor_focus = mon;
+    xcb_warp_pointer(s->c, XCB_NONE, s->root, 0, 0, 0, 0,
+                     mon->x + mon->width / 2, mon->y + mon->height / 2);
+  }
 
   mon->desktop_idx = desktop_idx;
   xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root,
