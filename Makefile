@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra
 LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr 
-C_FILES = absent.c monitors.c clients.c events.c keycallbacks.c keys.c layout.c desktops.c
+SRC_FILES = ./src/*.c
 
 BIN_DIR = /usr/bin
 EXEC_FILE = absent
@@ -15,8 +15,8 @@ copy:
 	cp $(SESSION_FILE) $(SESSION_DIR)
 	cp $(AUTOSTART_FILE) $(BIN_DIR)
 
-install: absent.c
-	$(CC) -o $(BIN_DIR)/$(EXEC_FILE) $(C_FILES) $(CFLAGS) $(LIBS)
+install: 
+	$(CC) -o $(BIN_DIR)/$(EXEC_FILE) $(SRC_FILES) $(CFLAGS) $(LIBS)
 
 clean:
 	rm -f $(BIN_DIR)/$(EXEC_FILE)

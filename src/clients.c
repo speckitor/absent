@@ -4,8 +4,8 @@
 
 #include <xcb/xproto.h>
 
+#include "../config.h"
 #include "clients.h"
-#include "config.h"
 #include "events.h"
 #include "layout.h"
 #include "monitors.h"

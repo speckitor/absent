@@ -1,5 +1,5 @@
 #include "layout.h"
-#include "config.h"
+#include "../config.h"
 #include "monitors.h"
 #include "types.h"
 

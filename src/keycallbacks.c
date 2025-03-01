@@ -118,7 +118,8 @@ void settiled(state_t *s, const char *command) {
 }
 
 void swapmainfocus(state_t *s, const char *command) {
-  if (s->focus && s->focus->monitor == monitor_contains_cursor(s)) {
+  if (s->focus && s->focus->monitor == monitor_contains_cursor(s) &&
+      !s->focus->floating) {
     client_t *cl = s->clients;
     while (cl && (cl->fullscreen || cl->floating ||
                   cl->monitor != s->focus->monitor ||

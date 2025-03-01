@@ -4,8 +4,8 @@
 #include <xcb/randr.h>
 #include <xcb/xcb.h>
 
+#include "../config.h"
 #include "absent.h"
-#include "config.h"
 #include "desktops.h"
 #include "monitors.h"
 #include "types.h"

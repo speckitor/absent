@@ -6,8 +6,8 @@
 #include <xcb/xcb_icccm.h>
 #include <xcb/xproto.h>
 
+#include "../config.h"
 #include "clients.h"
-#include "config.h"
 #include "events.h"
 #include "keys.h"
 #include "layout.h"

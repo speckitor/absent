@@ -6,8 +6,8 @@
 #include <xcb/xcb_cursor.h>
 #include <xcb/xproto.h>
 
+#include "../config.h"
 #include "absent.h"
-#include "config.h"
 #include "desktops.h"
 #include "events.h"
 #include "keys.h"
