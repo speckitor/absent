@@ -142,6 +142,13 @@ void client_move_to_desktop(state_t *s, const char *name) {
   make_layout(s);
 
   if (mon != s->monitor_focus) {
+    if (s->focus->floating) {
+      int x, y;
+      x = s->focus->x - s->monitor_focus->x + mon->x;
+      y = s->focus->y - s->monitor_focus->y + mon->y;
+      client_move_resize(s, s->focus, x, y, s->focus->width, s->focus->height);
+    }
+
     mon = s->monitor_focus;
     s->monitor_focus = s->focus->monitor;
     make_layout(s);

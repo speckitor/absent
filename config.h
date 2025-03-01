@@ -10,10 +10,10 @@
 #define DEFAULT_LAYOUT TILED
 
 // gap between root window and windows layout
-#define SCREEN_GAP 10
+#define SCREEN_GAP 0
 
 // gap between windows in layout
-#define LAYOUT_GAP 5
+#define LAYOUT_GAP 0
 
 // floating number that specifies how tall or wide should be main window
 #define MAIN_WINDOW_AREA 0.5
@@ -24,7 +24,7 @@
 #define MIN_WINDOW_WIDTH 100
 #define MIN_WINDOW_HEIGHT 100
 
-#define BORDER_WIDTH 3
+#define BORDER_WIDTH 1
 #define FOCUSED_BORDER_COLOR 0xf38ba8
 #define UNFOCUSED_BORDER_COLOR 0x9399b2
 

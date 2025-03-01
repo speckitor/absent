@@ -35,24 +35,28 @@ void client_create(state_t *s, xcb_window_t wid) {
     if (type_reply->type == XCB_ATOM_ATOM && type_reply->format == 32 &&
         type_reply->value_len > 0) {
       xcb_atom_t *atoms = xcb_get_property_value(type_reply);
+      int len = xcb_get_property_value_length(type_reply) / sizeof(xcb_atom_t);
 
-      if (atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_NORMAL]) {
-        floating = 0;
-      } else if (atoms[0] == s->ewmh[EWMH_WINODW_TYPE_DIALOG]) {
-        floating = 1;
-      } else if (atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_DOCK]) {
-        make_dock(s, wid);
-        return;
-      } else if (atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_DESKTOP] ||
-                 atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_MENU] ||
-                 atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_SPLASH] ||
-                 atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_TOOLBAR] ||
-                 atoms[0] == s->ewmh[EWMH_WINDOW_TYPE_UTILITY]) {
-        xcb_map_window(s->c, wid);
-        xcb_flush(s->c);
-        return;
-      } else {
-        floating = 0;
+      for (int i = 0; i < len; i++) {
+        if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_NORMAL]) {
+          floating = 0;
+        } else if (atoms[i] == s->ewmh[EWMH_WINODW_TYPE_DIALOG]) {
+          floating = 1;
+          break;
+        } else if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_DOCK]) {
+          make_dock(s, wid);
+          return;
+        } else if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_DESKTOP] ||
+                   atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_MENU] ||
+                   atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_SPLASH] ||
+                   atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_TOOLBAR] ||
+                   atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_UTILITY]) {
+          xcb_map_window(s->c, wid);
+          xcb_flush(s->c);
+          return;
+        } else {
+          floating = 0;
+        }
       }
     }
   }
@@ -144,8 +148,6 @@ void client_create(state_t *s, xcb_window_t wid) {
     free(error);
   }
 
-  xcb_map_window(s->c, wid);
-
   grab_buttons(s, cl);
 
   clients_update_ewmh(s);
@@ -155,6 +157,8 @@ void client_create(state_t *s, xcb_window_t wid) {
   if (client_contains_cursor(s, cl)) {
     client_focus(s, cl);
   }
+
+  xcb_map_window(s->c, wid);
 
   xcb_flush(s->c);
 }
@@ -494,8 +498,11 @@ void client_fullscreen(state_t *s, client_t *cl, int fullscreen) {
     cl->height = cl->oldheight;
 
     cl->fullscreen = 0;
-  } else {
 
+    if (!cl->floating) {
+      make_layout(s);
+    }
+  } else {
     xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, cl->wid,
                         s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 0, 0);
     uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
@@ -517,6 +524,13 @@ void client_fullscreen(state_t *s, client_t *cl, int fullscreen) {
     cl->height = cl->monitor->height;
 
     cl->fullscreen = 1;
+
+    make_layout(s);
+
+    value_list[0] = XCB_STACK_MODE_ABOVE;
+    xcb_configure_window(s->c, cl->wid, XCB_CONFIG_WINDOW_STACK_MODE,
+                         value_list);
+    xcb_flush(s->c);
   }
 
   client_configure(s, cl);
