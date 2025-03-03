@@ -147,6 +147,8 @@ void client_move_to_desktop(state_t *s, const char *name) {
       x = s->focus->x - s->monitor_focus->x + mon->x;
       y = s->focus->y - s->monitor_focus->y + mon->y;
       client_move_resize(s, s->focus, x, y, s->focus->width, s->focus->height);
+    } else if (s->focus->fullscreen) {
+      client_move_resize(s, s->focus, mon->x, mon->y, mon->width, mon->height);
     }
 
     mon = s->monitor_focus;
