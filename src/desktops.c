@@ -68,6 +68,8 @@ void switch_desktop(state_t *s, const char *name) {
     return;
   }
 
+  client_unfocus(s);
+
   client_t *cl = s->clients;
 
   while (cl) {
@@ -77,10 +79,6 @@ void switch_desktop(state_t *s, const char *name) {
     } else if (cl->monitor == mon && cl->desktop_idx == desktop_idx &&
                cl->hidden) {
       show_client(s, cl);
-
-      if (!s->focus) {
-        client_focus(s, cl);
-      }
     }
     cl = cl->next;
   }
