@@ -9,8 +9,7 @@
 // use 1 to enable, 0 to disable
 
 // there are TILED, VERTICAL, HORIZONTAL and PSEUDOFULLSCREEN layouts
-#define DEFAULT_LAYOUT PSEUDOFULLSCREEN
-
+#define DEFAULT_LAYOUT TILED
 // gap between screen edges and windows
 #define SCREEN_GAP 10
 
@@ -75,6 +74,7 @@ static keybind_t keybinds[] = {
     {XK_t, SUPER | SHIFT, setlayout, "TILED"},
     {XK_v, SUPER | SHIFT, setlayout, "VERTICAL"},
     {XK_h, SUPER | SHIFT, setlayout, "HORIZONTAL"},
+    {XK_p, SUPER | SHIFT, setlayout, "PSEUDOFULLSCREEN"},
     {XK_t, SUPER, settiled, NULL},
     {XK_s, SUPER, swapmainfocus, NULL},
     {XK_j, SUPER | SHIFT, swapfocusdown, NULL},
