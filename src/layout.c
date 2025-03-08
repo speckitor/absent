@@ -122,11 +122,12 @@ void pseudofullscreen(state_t *s, int length) {
 
   monitor_t *mon = s->monitor_focus;
   padding_t pad = mon->padding;
-  
+  int bw = BORDER_WIDTH;  
+
   x = mon->x + pad.left;
   y = mon->y + pad.top;
-  w = mon->width - pad.left - pad.right;
-  h = mon->height - pad.top - pad.bottom;
+  w = mon->width - pad.left - pad.right - 2 * bw;
+  h = mon->height - pad.top - pad.bottom - 2 * bw;
   
   for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
     client_move_resize(s, cl, x, y, w, h);
