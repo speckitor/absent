@@ -114,6 +114,8 @@ void setlayout(state_t *s, const char *command) {
       mon->desktops[mon->desktop_idx].layout = VERTICAL;
     } else if (strcmp(command, "HORIZONTAL") == 0) {
       mon->desktops[mon->desktop_idx].layout = HORIZONTAL;
+    } else if (strcmp(command, "PSEUDOFULLSCREEN") == 0) {
+      mon->desktops[mon->desktop_idx].layout = PSEUDOFULLSCREEN;
     }
 
     make_layout(s);
