@@ -8,8 +8,8 @@
 
 // use 1 to enable, 0 to disable
 
-// there are TILED, VERTICAL and HORIZONTAL layouts
-#define DEFAULT_LAYOUT TILED
+// there are TILED, VERTICAL, HORIZONTAL and PSEUDOFULLSCREEN layouts
+#define DEFAULT_LAYOUT PSEUDOFULLSCREEN
 
 // gap between screen edges and windows
 #define SCREEN_GAP 10

@@ -49,6 +49,8 @@ void setup(state_t *s) {
     }
   }
 
+
+
   xcb_cursor_context_t *ctx;
   xcb_cursor_context_new(s->c, s->screen, &ctx);
   xcb_cursor_t cursor = xcb_cursor_load_cursor(ctx, "left_ptr");
@@ -115,8 +117,7 @@ void setup_atoms(state_t *s) {
   s->ewmh[EWMH_STATE] = get_atom(s, "_NET_WM_STATE");
   s->ewmh[EWMH_FULLSCREEN] = get_atom(s, "_NET_WM_STATE_FULLSCREEN");
   s->ewmh[EWMH_WINDOW_TYPE] = get_atom(s, "_NET_WM_WINDOW_TYPE");
-  s->ewmh[EWMH_WINDOW_TYPE_DESKTOP] =
-      get_atom(s, "_NET_WM_WINDOW_TYPE_DESKTOP");
+  s->ewmh[EWMH_WINDOW_TYPE_DESKTOP] = get_atom(s, "_NET_WM_WINDOW_TYPE_DESKTOP");
   s->ewmh[EWMH_WINDOW_TYPE_UTILITY] =
       get_atom(s, "_NET_WM_WINDOW_TYPE_UTILITY");
   s->ewmh[EWMH_WINDOW_TYPE_SPLASH] = get_atom(s, "_NET_WM_WINDOW_TYPE_SPLASH");
@@ -153,11 +154,7 @@ void setup_atoms(state_t *s) {
   xcb_flush(s->c);
 }
 
-void clean(state_t *s) {
-  free(s->mouse);
-
-  client_t *cl = s->clients;
-  client_t *next;
+void clean(state_t *s) { free(s->mouse); client_t *cl = s->clients; client_t *next;
 
   while (cl) {
     next = cl->next;

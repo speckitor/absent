@@ -35,7 +35,11 @@ void make_layout(state_t *s) {
   case HORIZONTAL:
     horizontal(s, length);
     break;
+  case PSEUDOFULLSCREEN:
+    pseudofullscreen(s, length);
+    break;
   }
+
   xcb_flush(s->c);
 }
 
@@ -110,6 +114,23 @@ void horizontal(state_t *s, int length) {
     client_move_resize(s, cl, x, y, w, h);
     ty += h + bw + lg;
   }
+}
+
+void pseudofullscreen(state_t *s, int length) {
+  client_t *cl = s->clients;
+  int i, x, y, w, h;
+
+  monitor_t *mon = s->monitor_focus;
+  padding_t pad = mon->padding;
+  
+  x = mon->x + pad.left;
+  y = mon->y + pad.top;
+  w = mon->width - pad.left - pad.right;
+  h = mon->height - pad.top - pad.bottom;
+  
+  for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
+    client_move_resize(s, cl, x, y, w, h);
+  } 
 }
 
 client_t *next_tiled(state_t *s, client_t *cl) {
