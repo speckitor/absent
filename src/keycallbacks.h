@@ -6,6 +6,13 @@
 
 #include "types.h"
 
+static char *layout_names[LAYOUTS_NUMBER] = {
+    [TILED] = "TILED",
+    [VERTICAL] = "VERTICAL",
+    [HORIZONTAL] = "HORIZONTAL",
+    [PSEUDOFULLSCREEN] = "PSEUDOFULLSCREEN",
+};
+
 void run(state_t *s, const char *command);
 void cyclefocusdown(state_t *s, const char *command);
 void cyclefocusup(state_t *s, const char *command);

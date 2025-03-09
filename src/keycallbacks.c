@@ -108,17 +108,14 @@ void movefocustodesktop(state_t *s, const char *command) {
 void setlayout(state_t *s, const char *command) {
   if (s->monitor_focus) {
     monitor_t *mon = s->monitor_focus;
-    if (strcmp(command, "TILED") == 0) {
-      mon->desktops[mon->desktop_idx].layout = TILED;
-    } else if (strcmp(command, "VERTICAL") == 0) {
-      mon->desktops[mon->desktop_idx].layout = VERTICAL;
-    } else if (strcmp(command, "HORIZONTAL") == 0) {
-      mon->desktops[mon->desktop_idx].layout = HORIZONTAL;
-    } else if (strcmp(command, "PSEUDOFULLSCREEN") == 0) {
-      mon->desktops[mon->desktop_idx].layout = PSEUDOFULLSCREEN;
+   
+    for (int i = 0; i < LAYOUTS_NUMBER; i++) {
+      if (strcmp(command, layout_names[i]) == 0) {
+        mon->desktops[mon->desktop_idx].layout = i;
+        make_layout(s);
+        break;
+      }
     }
-
-    make_layout(s);
   }
 }
 
@@ -185,26 +182,14 @@ void swapfocusup(state_t *s, const char *command) {
 
 void destroyclient(state_t *s, const char *command) {
   if (s->focus) {
-    client_t *next = client_kill_next_focus(s);
-
     client_kill(s, s->focus);
-
-    if (next) {
-      client_focus(s, next);
-    }
   }
 }
 
 void killclient(state_t *s, const char *command) {
   if (s->focus) {
-    client_t *next = client_kill_next_focus(s);
-
     xcb_kill_client(s->c, s->focus->wid);
     xcb_flush(s->c);
-
-    if (next) {
-      client_focus(s, next);
-    }
   }
 }
 

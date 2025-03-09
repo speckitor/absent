@@ -50,9 +50,11 @@ void unmap_notify(state_t *s, xcb_generic_event_t *ev) {
 
   xcb_unmap_window(s->c, e->window);
 
+  client_t *next = cl == s->focus ? client_kill_next_focus(s) : NULL;
+
   client_remove(s, e->window);
 
-  if (!cl->floating) {
+  if (!cl->floating && !cl->fullscreen) {
     make_layout(s);
   }
 
@@ -61,6 +63,10 @@ void unmap_notify(state_t *s, xcb_generic_event_t *ev) {
   clients_update_ewmh(s);
 
   s->monitor_focus = monitor_contains_cursor(s);
+
+  if (next) {
+    client_focus(s, next);
+  }
 
   xcb_flush(s->c);
 }
@@ -139,7 +145,14 @@ void client_message(state_t *s, xcb_generic_event_t *ev) {
 void destroy_notify(state_t *s, xcb_generic_event_t *ev) {
   xcb_destroy_notify_event_t *e = (xcb_destroy_notify_event_t *)ev;
 
+  client_t *cl = client_from_wid(s, e->event);
+  client_t *next = cl == s->focus ? client_kill_next_focus(s) : NULL;
+
   client_remove(s, e->event);
+
+  if (next) {
+    client_focus(s, next);
+  }
 
   button_release(s);
 }

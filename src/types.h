@@ -20,7 +20,13 @@ typedef struct {
   const char *desktop_names[10];
 } desktop_config_t;
 
-typedef enum { TILED, VERTICAL, HORIZONTAL, PSEUDOFULLSCREEN } layout_t;
+typedef enum { 
+  TILED = 0, 
+  VERTICAL, 
+  HORIZONTAL, 
+  PSEUDOFULLSCREEN,
+  LAYOUTS_NUMBER 
+} layout_t;
 
 typedef struct monitor_t monitor_t;
 

@@ -303,8 +303,6 @@ client_t *client_kill_next_focus(state_t *s) {
 }
 
 void client_kill(state_t *s, client_t *cl) {
-  client_unfocus(s);
-
   int has_del_atom = 0;
   xcb_icccm_get_wm_protocols_reply_t reply;
   if (xcb_icccm_get_wm_protocols_reply(
