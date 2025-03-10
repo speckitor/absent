@@ -9,6 +9,13 @@
 #include "layout.h"
 #include "monitors.h"
 
+static const char *layout_names[LAYOUTS_NUMBER] = {
+    [TILED] = "TILED",
+    [VERTICAL] = "VERTICAL",
+    [HORIZONTAL] = "HORIZONTAL",
+    [PSEUDOFULLSCREEN] = "PSEUDOFULLSCREEN",
+};
+
 void run(state_t *s, const char *command) {
   if (fork() == 0) {
     execl("/bin/sh", "sh", "-c", command, (char *)NULL);

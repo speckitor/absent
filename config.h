@@ -49,7 +49,7 @@
 // specifies desktops for each monitor, check monitors list with "xrandr"
 // maximum number of desktops for one monitor is 10
 // the default desktop names for monitor is numbers from 1 to 10
-static desktop_config_t desktops[] = {
+static const desktop_config_t desktops[] = {
     {"DP-1", {"I", "II", "III", "IV", "V"}},
     {"DP-2", {"VI", "VII", "VIII", "IX", "X"}},
 };
@@ -66,9 +66,9 @@ static desktop_config_t desktops[] = {
 // killwm - kill window manager
 // setcurrentdesktop - change current desktop
 // movefocustodesktop - moves focused window to chosen desktop
-static keybind_t keybinds[] = {
+static const keybind_t keybinds[] = {
     {XK_Return, SUPER, run, "kitty"},
-    {XK_f, SUPER, run, "librewolf"},
+    {XK_b, SUPER, run, "chromium"},
     {XK_j, SUPER, cyclefocusdown, NULL},
     {XK_k, SUPER, cyclefocusup, NULL},
     {XK_t, SUPER | SHIFT, setlayout, "TILED"},
