@@ -152,7 +152,10 @@ void setup_atoms(state_t *s) {
   xcb_flush(s->c);
 }
 
-void clean(state_t *s) { free(s->mouse); client_t *cl = s->clients; client_t *next;
+void clean(state_t *s) { 
+  free(s->mouse); 
+  client_t *cl = s->clients; 
+  client_t *next;
 
   while (cl) {
     next = cl->next;
@@ -169,6 +172,8 @@ void clean(state_t *s) { free(s->mouse); client_t *cl = s->clients; client_t *ne
     free(monitors);
     monitors = next_monitor;
   }
+
+  free(s);
 }
 
 int main() {
