@@ -6,7 +6,7 @@
 
 #include "types.h"
 
-static char *layout_names[LAYOUTS_NUMBER] = {
+const char *layout_names[LAYOUTS_NUMBER] = {
     [TILED] = "TILED",
     [VERTICAL] = "VERTICAL",
     [HORIZONTAL] = "HORIZONTAL",

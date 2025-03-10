@@ -23,7 +23,7 @@ void send_event(state_t *s, client_t *cl, xcb_atom_t protocol);
 
 typedef void (*event_handler_t)(state_t *, xcb_generic_event_t *);
 
-static event_handler_t handlers[XCB_LAST_EVENT] = {
+event_handler_t handlers[XCB_LAST_EVENT] = {
     [XCB_MAP_REQUEST] = map_request,
     [XCB_UNMAP_NOTIFY] = unmap_notify,
     [XCB_CONFIGURE_REQUEST] = configure_request,
