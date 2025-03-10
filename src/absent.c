@@ -49,8 +49,6 @@ void setup(state_t *s) {
     }
   }
 
-
-
   xcb_cursor_context_t *ctx;
   xcb_cursor_context_new(s->c, s->screen, &ctx);
   xcb_cursor_t cursor = xcb_cursor_load_cursor(ctx, "left_ptr");
