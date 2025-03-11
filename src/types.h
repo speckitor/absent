@@ -142,8 +142,6 @@ struct state_t {
 
   float lastmotiontime;
   mouse_t *mouse;
-
-  int cursor_grabbed;
 };
 
 #endif
