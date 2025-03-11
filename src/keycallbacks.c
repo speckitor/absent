@@ -4,6 +4,7 @@
 
 #include "absent.h"
 #include "clients.h"
+#include "../config.h"
 #include "desktops.h"
 #include "keycallbacks.h"
 #include "layout.h"
@@ -126,10 +127,27 @@ void setlayout(state_t *s, const char *command) {
   }
 }
 
-void settiled(state_t *s, const char *command) {
-  if (s->focus) {
-    s->focus->floating = 0;
+void setfocustiled(state_t *s, const char *command) {
+  if (s->focus && (s->focus->floating || s->focus->fullscreen)) {
+    if (s->focus->floating) {
+      s->focus->floating = 0;
+  
+      s->focus->oldx = s->focus->x;
+      s->focus->oldy = s->focus->y;
+      s->focus->oldwidth = s->focus->width;
+      s->focus->oldheight = s->focus->height;
+    } else {
+      client_fullscreen(s, s->focus, 0);
+    }
+
     make_layout(s);
+  }
+}
+
+void setfocusfullscreen(state_t *s, const char *command) {
+  if (s->focus) {
+    int fullscreen = s->focus->fullscreen == 1 ? 0 : 1;
+    client_fullscreen(s, s->focus, fullscreen);
   }
 }
 
@@ -197,13 +215,6 @@ void killclient(state_t *s, const char *command) {
   if (s->focus) {
     xcb_kill_client(s->c, s->focus->wid);
     xcb_flush(s->c);
-  }
-}
-
-void fullscreen(state_t *s, const char *command) {
-  if (s->focus) {
-    int fullscreen = s->focus->fullscreen == 1 ? 0 : 1;
-    client_fullscreen(s, s->focus, fullscreen);
   }
 }
 

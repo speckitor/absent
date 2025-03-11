@@ -123,6 +123,11 @@ void client_create(state_t *s, xcb_window_t wid) {
   value_list[4] = BORDER_WIDTH;
   xcb_configure_window(s->c, wid, value_mask, value_list);
 
+  cl->oldx = cl->x;
+  cl->oldy = cl->y;
+  cl->oldwidth = cl->width;
+  cl->oldheight = cl->height;
+
   value_list[0] = UNFOCUSED_BORDER_COLOR;
   xcb_change_window_attributes(s->c, wid, XCB_CW_BORDER_PIXEL, value_list);
 
@@ -474,9 +479,7 @@ void client_fullscreen(state_t *s, client_t *cl, int fullscreen) {
 
   if (!fullscreen) {
     xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, cl->wid,
-                        s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 1,
-                        &s->ewmh[EWMH_FULLSCREEN]);
-
+                        s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 0, 0);
     uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
                           XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
                           XCB_CONFIG_WINDOW_BORDER_WIDTH;
@@ -502,7 +505,8 @@ void client_fullscreen(state_t *s, client_t *cl, int fullscreen) {
     }
   } else {
     xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, cl->wid,
-                        s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 0, 0);
+                        s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 1,
+                        &s->ewmh[EWMH_FULLSCREEN]);
     uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y |
                           XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT |
                           XCB_CONFIG_WINDOW_BORDER_WIDTH;

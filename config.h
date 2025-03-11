@@ -59,7 +59,8 @@ static const desktop_config_t desktops[] = {
 // run - execute command
 // cyclefocusdown, cyclefocusup - change focused window
 // setlayout - change layout
-// settiled - add focused window to layout if it's floating
+// setfocustiled - add focused window to layout if it's floating
+// setfocusfullscreen - enable/disable fullscreen mode for fucosed window
 // swapmainfocus - swap focused window with main window in layout
 // destroyclient - kill focused window
 // killclient - kill focused window process
@@ -75,14 +76,14 @@ static const keybind_t keybinds[] = {
     {XK_v, SUPER | SHIFT, setlayout, "VERTICAL"},
     {XK_h, SUPER | SHIFT, setlayout, "HORIZONTAL"},
     {XK_p, SUPER | SHIFT, setlayout, "PSEUDOFULLSCREEN"},
-    {XK_t, SUPER, settiled, NULL},
+    {XK_t, SUPER, setfocustiled, NULL},
+    {XK_f, SUPER, setfocusfullscreen, NULL},
     {XK_s, SUPER, swapmainfocus, NULL},
     {XK_j, SUPER | SHIFT, swapfocusdown, NULL},
     {XK_k, SUPER | SHIFT, swapfocusup, NULL},
     {XK_c, SUPER, destroyclient, NULL},
     {XK_c, SUPER | SHIFT, killclient, NULL},
     {XK_Escape, SUPER, killwm, NULL},
-    {XK_f, SUPER | SHIFT, fullscreen, NULL},
     {XK_1, SUPER, setcurrentdesktop, "I"},
     {XK_2, SUPER, setcurrentdesktop, "II"},
     {XK_3, SUPER, setcurrentdesktop, "III"},
