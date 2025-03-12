@@ -221,4 +221,5 @@ void killclient(state_t *s, const char *command) {
 void killwm(state_t *s, const char *command) {
   xcb_disconnect(s->c);
   clean(s);
+  exit(0);
 }
