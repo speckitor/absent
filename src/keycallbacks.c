@@ -24,8 +24,25 @@ void run(state_t *s, const char *command) {
   }
 }
 
-void cyclefocusdown(state_t *s, const char *command) {
+static int count_clients_on_desktop(state_t *s) {
+  int count = 0;
+
   if (s->clients) {
+    client_t *cl = s->clients;
+    while (cl) {
+      if (cl->monitor == s->monitor_focus &&
+          cl->desktop_idx == s->monitor_focus->desktop_idx) {
+        count++;
+      }
+      cl = cl->next;
+    }
+  }
+  
+  return count;
+}
+
+void cyclefocusdown(state_t *s, const char *command) {
+  if (s->clients && count_clients_on_desktop(s) > 0) {
     client_t *cl = !s->focus || !s->focus->next ? s->clients : s->focus->next;
     client_t *next = NULL;
 
@@ -171,7 +188,7 @@ void swapmainfocus(state_t *s, const char *command) {
 }
 
 void swapfocusdown(state_t *s, const char *command) {
-  if (s->focus) {
+  if (s->clients && s->focus && count_clients_on_desktop(s) > 1) {
     client_t *cl = s->focus->next;
     while (cl &&
            (cl->fullscreen || cl->floating || cl->monitor != s->monitor_focus ||
@@ -187,7 +204,7 @@ void swapfocusdown(state_t *s, const char *command) {
 }
 
 void swapfocusup(state_t *s, const char *command) {
-  if (s->focus) {
+  if (s->clients && s->focus && count_clients_on_desktop(s) > 1) {
     client_t *prev = NULL;
     client_t *cl = s->clients;
     while (cl != s->focus) {

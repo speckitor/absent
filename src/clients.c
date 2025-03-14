@@ -159,11 +159,11 @@ void client_create(state_t *s, xcb_window_t wid) {
 
   make_layout(s);
 
+  xcb_map_window(s->c, wid);
+
   if (client_contains_cursor(s, cl)) {
     client_focus(s, cl);
   }
-
-  xcb_map_window(s->c, wid);
 
   xcb_flush(s->c);
 }
