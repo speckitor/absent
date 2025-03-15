@@ -172,6 +172,8 @@ void destroy_notify(state_t *s, xcb_generic_event_t *ev) {
 void key_press(state_t *s, xcb_generic_event_t *ev) {
   xcb_key_press_event_t *e = (xcb_key_press_event_t *)ev;
 
+  s->monitor_focus = monitor_contains_cursor(s);
+
   int length = sizeof(keybinds) / sizeof(keybinds[0]);
   for (int i = 0; i < length; i++) {
     if (key_cmp(s, keybinds[i], e->detail, e->state)) {
