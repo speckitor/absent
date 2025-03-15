@@ -43,6 +43,10 @@ static int count_clients_on_desktop(state_t *s) {
 
 void cyclefocusdown(state_t *s, const char *command) {
   if (s->clients && count_clients_on_desktop(s) > 0) {
+    if (s->focus && s->focus->monitor != s->monitor_focus) {
+      client_unfocus(s);
+    }
+
     client_t *cl = !s->focus || !s->focus->next ? s->clients : s->focus->next;
     client_t *next = NULL;
 
@@ -75,6 +79,10 @@ void cyclefocusdown(state_t *s, const char *command) {
 
 void cyclefocusup(state_t *s, const char *command) {
   if (s->clients) {
+    if (s->focus && s->focus->monitor != s->monitor_focus) {
+      client_unfocus(s);
+    }
+
     client_t *cl = s->clients;
     client_t *prev = NULL;
     client_t *target = NULL;
