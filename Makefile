@@ -12,6 +12,7 @@ SESSION_DIR = /usr/share/xsessions
 all: copy install
 
 copy:
+	mkdir $(SESSION_DIR)
 	cp $(SESSION_FILE) $(SESSION_DIR)
 	cp $(AUTOSTART_FILE) $(BIN_DIR)
 
