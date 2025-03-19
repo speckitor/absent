@@ -1,6 +1,8 @@
 # absent
 Simple and flexible X tiling window manager
 
+[Video example](https://youtu.be/6glkO97ToIY)
+
 # Installation
 
 Dependencies
