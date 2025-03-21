@@ -241,7 +241,7 @@ void motion_notify(state_t *s, xcb_generic_event_t *ev) {
   xcb_motion_notify_event_t *e = (xcb_motion_notify_event_t *)ev;
 
   uint32_t current_time = e->time;
-  if ((current_time - s->lastmotiontime) <= 10) {
+  if ((current_time - s->lastmotiontime) <= POINTER_UPDATE_TIME) {
     return;
   }
 

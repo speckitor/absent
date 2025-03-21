@@ -46,6 +46,9 @@
 // enable autostart script running (autostartabsent)
 #define ENABLE_AUTOSTART 1
 
+// set time for updating pointer position (in milliseconds)
+#define POINTER_UPDATE_TIME 10
+
 // specifies desktops for each monitor, check monitors list with "xrandr"
 // maximum number of desktops for one monitor is 10
 // the default desktop names for monitor is numbers from 1 to 10
