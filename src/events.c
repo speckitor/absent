@@ -13,6 +13,7 @@
 #include "layout.h"
 #include "monitors.h"
 #include "types.h"
+#include "desktops.h"
 
 static const event_handler_t handlers[XCB_LAST_EVENT] = {
     [XCB_MAP_REQUEST] = map_request,
@@ -130,6 +131,11 @@ void configure_request(state_t *s, xcb_generic_event_t *ev) {
 
 void client_message(state_t *s, xcb_generic_event_t *ev) {
   xcb_client_message_event_t *e = (xcb_client_message_event_t *)ev;
+
+  if (e->type == s->ewmh[EWMH_CURRENT_DESKTOP]) {
+    switch_desktop_by_idx(s, e->data.data32[0]);
+    return;
+  }
 
   client_t *cl = client_from_wid(s, e->window);
 

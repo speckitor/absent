@@ -97,6 +97,58 @@ void switch_desktop(state_t *s, const char *name) {
   xcb_flush(s->c);
 }
 
+// TODO: works properly only with one monitor, needs to be fixed
+void switch_desktop_by_idx(state_t *s, int desktop_id) {
+  monitor_t *mon = s->monitors;
+  int desktop_idx = -1;
+  
+  while (mon) {
+    for (int i = 0; i < mon->number_desktops; i++) {
+      if (mon->desktops[i].desktop_id == desktop_id) {
+        desktop_idx = i;
+        break;  
+      }
+    }
+    
+    if (desktop_id != -1) {
+      break;
+    }
+    mon = mon->next;
+  }
+
+  if (desktop_id == -1) {
+    return;
+  }
+
+  client_unfocus(s);
+
+  client_t *cl = s->clients;
+
+  while (cl) {
+    if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx &&
+        !cl->hidden && cl->desktop_idx != desktop_idx) {
+      hide_client(s, cl);
+    } else if (cl->monitor == mon && cl->desktop_idx == desktop_idx &&
+               cl->hidden) {
+      show_client(s, cl);
+    }
+    cl = cl->next;
+  }
+
+  if (s->monitor_focus != mon) {
+    s->monitor_focus = mon;
+    xcb_warp_pointer(s->c, XCB_NONE, s->root, 0, 0, 0, 0,
+                     mon->x + mon->width / 2, mon->y + mon->height / 2);
+  }
+
+  mon->desktop_idx = desktop_idx;
+  xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root,
+                      s->ewmh[EWMH_CURRENT_DESKTOP], XCB_ATOM_CARDINAL, 32, 1,
+                      &desktop_id);
+  make_layout(s);
+  xcb_flush(s->c);
+}
+
 void client_move_to_desktop(state_t *s, const char *name) {
   monitor_t *mon = s->monitor_focus;
   int desktop_idx = -1;

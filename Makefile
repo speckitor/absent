@@ -3,7 +3,7 @@ CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wal
 LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr 
 SRC_FILES = ./src/*.c
 
-BIN_DIR = /usr/bin
+BIN_DIR = /usr/local/bin
 EXEC_FILE = absent
 AUTOSTART_FILE = autostartabsent
 SESSION_FILE = $(EXEC_FILE).desktop

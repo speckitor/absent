@@ -1,7 +1,4 @@
 # absent
-
-### [Migrated to Codeberg](https://codeberg.org/speckitor/absent)
-
 Simple and flexible X tiling window manager
 
 [Video example](https://youtu.be/6glkO97ToIY)

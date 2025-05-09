@@ -53,8 +53,8 @@
 // maximum number of desktops for one monitor is 10
 // the default desktop names for monitor is numbers from 1 to 10
 static const desktop_config_t desktops[] = {
-    {"DP-1", {"I", "II", "III", "IV", "V"}},
-    {"DP-2", {"VI", "VII", "VIII", "IX", "X"}},
+    {"DP-1", {"1", "2", "3", "4", "5"}},
+    {"DP-2", {"6", "7", "8", "9", "10"}},
 };
 
 // specifies keybinds
@@ -72,7 +72,8 @@ static const desktop_config_t desktops[] = {
 // movefocustodesktop - moves focused window to chosen desktop
 static const keybind_t keybinds[] = {
     {XK_Return, SUPER, run, "kitty"},
-    {XK_b, SUPER, run, "chromium"},
+    {XK_b, SUPER, run, "firefox"},
+    {XK_r, SUPER, run, "rofi -show drun"},
     {XK_j, SUPER, cyclefocusdown, NULL},
     {XK_k, SUPER, cyclefocusup, NULL},
     {XK_t, SUPER | SHIFT, setlayout, "TILED"},
@@ -87,25 +88,25 @@ static const keybind_t keybinds[] = {
     {XK_c, SUPER, destroyclient, NULL},
     {XK_c, SUPER | SHIFT, killclient, NULL},
     {XK_Escape, SUPER, killwm, NULL},
-    {XK_1, SUPER, setcurrentdesktop, "I"},
-    {XK_2, SUPER, setcurrentdesktop, "II"},
-    {XK_3, SUPER, setcurrentdesktop, "III"},
-    {XK_4, SUPER, setcurrentdesktop, "IV"},
-    {XK_5, SUPER, setcurrentdesktop, "V"},
-    {XK_6, SUPER, setcurrentdesktop, "VI"},
-    {XK_7, SUPER, setcurrentdesktop, "VII"},
-    {XK_8, SUPER, setcurrentdesktop, "VIII"},
-    {XK_9, SUPER, setcurrentdesktop, "IX"},
-    {XK_0, SUPER, setcurrentdesktop, "X"},
-    {XK_1, SUPER | SHIFT, movefocustodesktop, "I"},
-    {XK_2, SUPER | SHIFT, movefocustodesktop, "II"},
-    {XK_3, SUPER | SHIFT, movefocustodesktop, "III"},
-    {XK_4, SUPER | SHIFT, movefocustodesktop, "IV"},
-    {XK_5, SUPER | SHIFT, movefocustodesktop, "V"},
-    {XK_6, SUPER | SHIFT, movefocustodesktop, "VI"},
-    {XK_7, SUPER | SHIFT, movefocustodesktop, "VII"},
-    {XK_8, SUPER | SHIFT, movefocustodesktop, "VIII"},
-    {XK_9, SUPER | SHIFT, movefocustodesktop, "IX"},
-    {XK_0, SUPER | SHIFT, movefocustodesktop, "X"},
+    {XK_1, SUPER, setcurrentdesktop, "1"},
+    {XK_2, SUPER, setcurrentdesktop, "2"},
+    {XK_3, SUPER, setcurrentdesktop, "3"},
+    {XK_4, SUPER, setcurrentdesktop, "4"},
+    {XK_5, SUPER, setcurrentdesktop, "5"},
+    {XK_6, SUPER, setcurrentdesktop, "6"},
+    {XK_7, SUPER, setcurrentdesktop, "7"},
+    {XK_8, SUPER, setcurrentdesktop, "8"},
+    {XK_9, SUPER, setcurrentdesktop, "9"},
+    {XK_0, SUPER, setcurrentdesktop, "10"},
+    {XK_1, SUPER | SHIFT, movefocustodesktop, "1"},
+    {XK_2, SUPER | SHIFT, movefocustodesktop, "2"},
+    {XK_3, SUPER | SHIFT, movefocustodesktop, "3"},
+    {XK_4, SUPER | SHIFT, movefocustodesktop, "4"},
+    {XK_5, SUPER | SHIFT, movefocustodesktop, "5"},
+    {XK_6, SUPER | SHIFT, movefocustodesktop, "6"},
+    {XK_7, SUPER | SHIFT, movefocustodesktop, "7"},
+    {XK_8, SUPER | SHIFT, movefocustodesktop, "8"},
+    {XK_9, SUPER | SHIFT, movefocustodesktop, "9"},
+    {XK_0, SUPER | SHIFT, movefocustodesktop, "10"},
 };
 #endif
