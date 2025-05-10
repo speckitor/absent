@@ -97,7 +97,6 @@ void switch_desktop(state_t *s, const char *name) {
   xcb_flush(s->c);
 }
 
-// TODO: works properly only with one monitor, needs to be fixed
 void switch_desktop_by_idx(state_t *s, int desktop_id) {
   monitor_t *mon = s->monitors;
   int desktop_idx = -1;
@@ -110,13 +109,13 @@ void switch_desktop_by_idx(state_t *s, int desktop_id) {
       }
     }
     
-    if (desktop_id != -1) {
+    if (desktop_idx != -1) {
       break;
     }
     mon = mon->next;
   }
 
-  if (desktop_id == -1) {
+  if (desktop_idx == -1) {
     return;
   }
 
