@@ -8,7 +8,7 @@ Simple and flexible X tiling window manager
 Dependencies
 
 ```console
-gcc, make, xcb, xcb-util, xcb-proto, xcb-util-keysyms, xcb-util-cursor, xcb-util-wm, xkbcommon, xorg-server, xorg-xinit
+gcc, make, xcb, xcb-util, xcb-proto, xcb-util-keysyms, xcb-util-cursor, xcb-util-wm (xcb-util-icccm), xkbcommon, xcb-cursors, xcb-randr
 ```
 
 Install window manager
@@ -19,10 +19,16 @@ Install window manager
 git clone https://github.com/speckitor/absent
 ```
 
-- compile and install wm with make
+- compile wm with make
 
 ```console
-sudo make
+make
+```
+
+- copy `absent`, `autostartabsent` and `absent.desktop` files to `/usr/local/bin` and `/usr/share/xsessions/`
+
+```console
+sudo make copy
 ```
 
 Removing window manager

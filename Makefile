@@ -9,15 +9,16 @@ AUTOSTART_FILE = autostartabsent
 SESSION_FILE = $(EXEC_FILE).desktop
 SESSION_DIR = /usr/share/xsessions
 
-all: copy install
+all: compile
 
 copy:
 	mkdir -p $(SESSION_DIR)
-	cp $(SESSION_FILE) $(SESSION_DIR)
+	cp $(EXEC_FILE) $(BIN_DIR)
 	cp $(AUTOSTART_FILE) $(BIN_DIR)
+	cp $(SESSION_FILE) $(SESSION_DIR)
 
-install: 
-	$(CC) -o $(BIN_DIR)/$(EXEC_FILE) $(SRC_FILES) $(CFLAGS) $(LIBS)
+compile: 
+	$(CC) -o $(EXEC_FILE) $(SRC_FILES) $(CFLAGS) $(LIBS)
 
 clean:
 	rm -f $(BIN_DIR)/$(EXEC_FILE)
