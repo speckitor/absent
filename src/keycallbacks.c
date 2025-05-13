@@ -177,6 +177,26 @@ void setfocusfullscreen(state_t *s, const char *command) {
     }
 }
 
+void movefocusdir(state_t *s, const char *command) {
+    if (s->focus) {
+        int dx, dy;
+        if (strcmp(command, "LEFT") == 0) {
+            dx = -MOVE_WINODOW_STEP;
+            dy = 0;
+        } else if (strcmp(command, "RIGHT") == 0) {
+            dx = MOVE_WINODOW_STEP;
+            dy = 0;
+        } else if (strcmp(command, "UP") == 0) {
+            dx = 0;
+            dy = -MOVE_WINODOW_STEP;
+        } else if (strcmp(command, "DOWN") == 0) {
+            dx = 0;
+            dy = MOVE_WINODOW_STEP;
+        }
+        client_move(s, s->focus, s->focus->x + dx, s->focus->y + dy);
+    }
+}
+
 void swapmainfocus(state_t *s, const char *command) {
     if (s->focus && s->focus->monitor == monitor_contains_cursor(s) &&
         !s->focus->floating) {
