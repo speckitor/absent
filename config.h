@@ -24,7 +24,7 @@
 #define SET_NEW_WINDOW_MAIN 0
 
 // specify how many pixels window moves with moving keybinds
-#define MOVE_WINODOW_STEP 75
+#define MOVE_WINODOW_STEP 150
 
 // specify the min size for windows which doesn't do it on its own
 #define MIN_WINDOW_WIDTH 100
@@ -76,24 +76,24 @@ static const desktop_config_t desktops[] = {
 // setcurrentdesktop - change current desktop
 // movefocustodesktop - moves focused window to chosen desktop
 static const keybind_t keybinds[] = {
-    {XK_Return, SUPER, run, "kitty"},
+    {XK_Return, SUPER, run, "alacritty"},
     {XK_b, SUPER, run, "firefox"},
     {XK_r, SUPER, run, "rofi -show drun"},
-    {XK_w, SUPER, cyclefocusdown, NULL},
-    {XK_s, SUPER, cyclefocusup, NULL},
+    {XK_j, SUPER, cyclefocusdown, NULL},
+    {XK_k, SUPER, cyclefocusup, NULL},
     {XK_t, SUPER | SHIFT, setlayout, "TILED"},
     {XK_v, SUPER | SHIFT, setlayout, "VERTICAL"},
     {XK_h, SUPER | SHIFT, setlayout, "HORIZONTAL"},
     {XK_p, SUPER | SHIFT, setlayout, "PSEUDOFULLSCREEN"},
     {XK_t, SUPER, setfocustiled, NULL},
     {XK_f, SUPER, setfocusfullscreen, NULL},
-    {XK_h, SUPER, movefocusdir, "LEFT"},
-    {XK_j, SUPER, movefocusdir, "DOWN"},
-    {XK_k, SUPER, movefocusdir, "UP"},
-    {XK_l, SUPER, movefocusdir, "RIGHT"},
+    {XK_h, ALT, movefocusdir, "LEFT"},
+    {XK_j, ALT, movefocusdir, "DOWN"},
+    {XK_k, ALT, movefocusdir, "UP"},
+    {XK_l, ALT, movefocusdir, "RIGHT"},
     {XK_s, SUPER, swapmainfocus, NULL},
-    {XK_w, SUPER | SHIFT, swapfocusdown, NULL},
-    {XK_s, SUPER | SHIFT, swapfocusup, NULL},
+    {XK_j, SUPER | SHIFT, swapfocusdown, NULL},
+    {XK_k, SUPER | SHIFT, swapfocusup, NULL},
     {XK_c, SUPER, destroyclient, NULL},
     {XK_c, SUPER | SHIFT, killclient, NULL},
     {XK_Escape, SUPER, killwm, NULL},

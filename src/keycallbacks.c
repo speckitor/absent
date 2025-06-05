@@ -193,7 +193,10 @@ void movefocusdir(state_t *s, const char *command) {
             dx = 0;
             dy = MOVE_WINODOW_STEP;
         }
+
+        s->focus->floating = 1;    
         client_move(s, s->focus, s->focus->x + dx, s->focus->y + dy);
+        make_layout(s);
     }
 }
 
