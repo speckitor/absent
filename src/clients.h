@@ -18,7 +18,7 @@ client_t *client_from_wid(state_t *s, xcb_window_t wid);
 void client_move(state_t *s, client_t *cl, int x, int y);
 void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e);
 
-void client_fullscreen(state_t *s, client_t *cl, int fullscreen);
+void client_fullscreen(state_t *s, client_t *cl, bool fullscreen);
 void client_configure(state_t *s, client_t *cl);
 
 void client_unfocus(state_t *s);

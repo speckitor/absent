@@ -6,75 +6,84 @@
 #include "src/keycallbacks.h"
 #include "src/types.h"
 
-// use 1 to enable, 0 to disable
+/* use 1 to enable, 0 to disable */
 
-// there are TILED, VERTICAL, HORIZONTAL and PSEUDOFULLSCREEN layouts
+/* there are TILED, VERTICAL, HORIZONTAL and PSEUDOFULLSCREEN layouts */
 #define DEFAULT_LAYOUT TILED
-// gap between screen edges and windows
+
+/* gap between screen edges and windows */
 #define SCREEN_GAP 10
 
-// gap between windows in layout
+/* gap between windows in layout */
 #define LAYOUT_GAP 5
 
-// floating number that specifies how tall or wide should be main window
-// (currently only in tiled layout)
+/*
+    floating-point number that specifies how tall or wide should be main window
+    (currently only in tiled layout)
+*/
 #define MAIN_WINDOW_AREA 0.5
 
-// new window opens as main layout window
+/* new window opens as main layout window */
 #define SET_NEW_WINDOW_MAIN 0
 
-// specify how many pixels window moves with moving keybinds
+/* specify how many pixels window moves with moving keybinds */
 #define MOVE_WINODOW_STEP 150
 
-// specify the min size for windows which doesn't do it on its own
+/* specify the min size for windows which doesn't do it on its own */
 #define MIN_WINDOW_WIDTH 100
 #define MIN_WINDOW_HEIGHT 100
 
-// windows border settings
-// width in pixels, colors in format: 0x(hex_color)
+/*
+    windows border settings
+    width in pixels, colors in format: 0x(hex_color)
+*/
 #define BORDER_WIDTH 1
 #define FOCUSED_BORDER_COLOR 0xf38ba8
 #define UNFOCUSED_BORDER_COLOR 0x9399b2
 
-// modifiers
+/* modifiers */
 #define NOMOD XCB_NONE
 #define ALT XCB_MOD_MASK_1
 #define SUPER XCB_MOD_MASK_4
 #define SHIFT XCB_MOD_MASK_SHIFT
 #define CONTROL XCB_MOD_MASK_CONTROL
 
-// modifiers you will use to move/resize windows with left/right mouse buttons
+/* modifiers you will use to move/resize windows with left/right mouse buttons */
 #define BUTTON_MOD SUPER
 
-// enable autostart script running (autostartabsent)
+/* enable autostart script running (autostartabsent) */
 #define ENABLE_AUTOSTART 1
 
-// set time for updating pointer position (in milliseconds)
+/* set time for updating pointer position (in milliseconds) */
 #define POINTER_UPDATE_TIME 10
 
-// specifies desktops for each monitor, check monitors list with "xrandr"
-// maximum number of desktops for one monitor is 10
-// the default desktop names for monitor is numbers from 1 to 10
+/*
+    specifies desktops for each monitor, check monitors list with "xrandr"
+    maximum number of desktops for one monitor is 10
+    the default desktop names for monitor is numbers from 1 to 10
+*/
 static const desktop_config_t desktops[] = {
     {"DP-1", {"1", "2", "3", "4", "5"}},
     {"DP-2", {"6", "7", "8", "9", "10"}},
 };
 
-// specifies keybinds
-// available functions:
-// run - execute command
-// cyclefocusdown, cyclefocusup - change focused window
-// setlayout - change layout
-// setfocustiled - add focused window to layout if it's floating
-// setfocusfullscreen - enable/disable fullscreen mode for fucosed window
-// movefocusdir - move focus window in 4 directions (LEFT, RIGHT, UP, DOWN)
-// swapmainfocus - swap focused window with main window in layout
-// swapfocusdown, swapfocusup - swap focused window with next/previous window in layout
-// destroyclient - kill focused window
-// killclient - kill focused window process
-// killwm - kill window manager
-// setcurrentdesktop - change current desktop
-// movefocustodesktop - moves focused window to chosen desktop
+/*
+    specifies keybinds
+    available functions:
+    run - execute command
+    cyclefocusdown, cyclefocusup - change focused window
+    setlayout - change layout
+    setfocustiled - add focused window to layout if it's floating
+    setfocusfullscreen - enable/disable fullscreen mode for fucosed window
+    movefocusdir - move focus window in 1 of 4 directions (LEFT, RIGHT, UP, DOWN)
+    swapmainfocus - swap focused window with main window in layout
+    swapfocusdown, swapfocusup - swap focused window with next/previous window in layout
+    destroyclient - kill focused window
+    killclient - kill focused window process
+    killwm - kill window manager
+    setcurrentdesktop - change current desktop
+    movefocustodesktop - moves focused window to chosen desktop
+*/
 static const keybind_t keybinds[] = {
     {XK_Return, SUPER, run, "alacritty"},
     {XK_b, SUPER, run, "firefox"},

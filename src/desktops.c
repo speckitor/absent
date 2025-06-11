@@ -214,11 +214,11 @@ void client_move_to_desktop(state_t *s, const char *name) {
 }
 
 void hide_client(state_t *s, client_t *cl) {
-    cl->hidden = 1;
+    cl->hidden = true;
     xcb_unmap_window(s->c, cl->wid);
 }
 
 void show_client(state_t *s, client_t *cl) {
-    cl->hidden = 0;
+    cl->hidden = false;
     xcb_map_window(s->c, cl->wid);
 }

@@ -156,14 +156,14 @@ void setlayout(state_t *s, const char *command) {
 void setfocustiled(state_t *s, const char *command) {
     if (s->focus && (s->focus->floating || s->focus->fullscreen)) {
         if (s->focus->floating) {
-            s->focus->floating = 0;
+            s->focus->floating = false;
 
             s->focus->oldx = s->focus->x;
             s->focus->oldy = s->focus->y;
             s->focus->oldwidth = s->focus->width;
             s->focus->oldheight = s->focus->height;
         } else {
-            client_fullscreen(s, s->focus, 0);
+            client_fullscreen(s, s->focus, false);
         }
 
         make_layout(s);
@@ -172,7 +172,7 @@ void setfocustiled(state_t *s, const char *command) {
 
 void setfocusfullscreen(state_t *s, const char *command) {
     if (s->focus) {
-        int fullscreen = s->focus->fullscreen == 1 ? 0 : 1;
+        int fullscreen = s->focus->fullscreen != true;
         client_fullscreen(s, s->focus, fullscreen);
     }
 }
@@ -194,8 +194,14 @@ void movefocusdir(state_t *s, const char *command) {
             dy = MOVE_WINODOW_STEP;
         }
 
-        s->focus->floating = 1;    
+        uint32_t value_list[1] = {XCB_STACK_MODE_ABOVE};
+        xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_STACK_MODE, value_list);
+
+        xcb_flush(s->c);
+
+        s->focus->floating = true;    
         client_move(s, s->focus, s->focus->x + dx, s->focus->y + dy);
+
         make_layout(s);
     }
 }

@@ -54,8 +54,7 @@ void tiled(state_t *s, int length) {
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
-    mw = length > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA
-                    : mon->width - pad.left - pad.right;
+    mw = length > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA : mon->width - pad.left - pad.right;
     ty = pad.top;
 
     for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {

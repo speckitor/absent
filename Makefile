@@ -11,7 +11,7 @@ SESSION_DIR = /usr/share/xsessions
 
 all: compile
 
-copy:
+copy: clean
 	mkdir -p $(SESSION_DIR)
 	cp $(EXEC_FILE) $(BIN_DIR)
 	cp $(AUTOSTART_FILE) $(BIN_DIR)

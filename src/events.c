@@ -146,10 +146,11 @@ void client_message(state_t *s, xcb_generic_event_t *ev) {
 
     if (e->type == s->ewmh[EWMH_STATE]) {
         if (e->data.data32[1] == s->ewmh[EWMH_FULLSCREEN] ||
-            e->data.data32[2] == s->ewmh[EWMH_FULLSCREEN]) {
+            e->data.data32[2] == s->ewmh[EWMH_FULLSCREEN])
+        {
             if (e->data.data32[0] == 1 ||
                 (e->data.data32[0] == 2 && !cl->fullscreen)) {
-                client_fullscreen(s, cl, 1);
+                client_fullscreen(s, cl, true);
             }
         }
     } else if (e->type == s->ewmh[EWMH_ACTIVE_WINDOW]) {
@@ -219,14 +220,14 @@ void button_press(state_t *s, xcb_generic_event_t *ev) {
     }
 
     if (e->state & BUTTON_MOD) {
-        cl->floating = 1;
+        cl->floating = true;
         make_layout(s);
         s->mouse->pressed_button = e->detail;
         s->mouse->root_x = e->root_x;
         s->mouse->root_y = e->root_y;
 
         if (s->focus->fullscreen) {
-            s->focus->fullscreen = 0;
+            s->focus->fullscreen = false;
             uint32_t value_list[] = {BORDER_WIDTH};
             xcb_configure_window(s->c, s->focus->wid, 
                 XCB_CONFIG_WINDOW_BORDER_WIDTH, value_list);

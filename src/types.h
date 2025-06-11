@@ -1,6 +1,8 @@
 #ifndef ABSENT_TYPES_H
 #define ABSENT_TYPES_H
 
+#include <stdbool.h>
+
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
@@ -70,7 +72,7 @@ struct client_t {
 
     size_hints_t size_hints;
 
-    int fullscreen, floating, hidden;
+    bool fullscreen, floating, hidden;
 
     monitor_t *monitor;
     int desktop_idx;
