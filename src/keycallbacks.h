@@ -1,5 +1,4 @@
-#ifndef ABSENT_KEYCALLBACKS_H
-#define ABSENT_KEYCALLBACKS_H
+#pragma once
 
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
@@ -28,5 +27,3 @@ void swapfocusup(state_t *s, const char *command);
 void destroyclient(state_t *s, const char *command);
 void killclient(state_t *s, const char *command);
 void killwm(state_t *s, const char *command);
-
-#endif

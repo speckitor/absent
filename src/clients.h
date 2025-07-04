@@ -1,5 +1,4 @@
-#ifndef ABSENT_CLIENTS_H
-#define ABSENT_CLIENTS_H
+#pragma once
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_icccm.h>
@@ -27,5 +26,3 @@ void client_focus(state_t *s, client_t *cl);
 void grab_buttons(state_t *s, client_t *cl);
 int client_contains_cursor(state_t *s, client_t *cl);
 void clients_update_ewmh(state_t *s);
-
-#endif

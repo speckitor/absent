@@ -1,5 +1,4 @@
-#ifndef ABSENT_TYPES_H
-#define ABSENT_TYPES_H
+#pragma once
 
 #include <stdbool.h>
 
@@ -145,5 +144,3 @@ struct state_t {
     float lastmotiontime;
     mouse_t *mouse;
 };
-
-#endif

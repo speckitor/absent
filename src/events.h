@@ -1,5 +1,4 @@
-#ifndef ABSENT_EVENTS_H
-#define ABSENT_EVENTS_H
+#pragma once
 
 #include <xcb/xcb.h>
 
@@ -22,5 +21,3 @@ void send_event(state_t *s, client_t *cl, xcb_atom_t protocol);
 #define XCB_LAST_EVENT 35
 
 typedef void (*event_handler_t)(state_t *, xcb_generic_event_t *);
-
-#endif

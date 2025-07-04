@@ -1,5 +1,4 @@
-#ifndef ABSENT_DESKTOPS_H
-#define ABSENT_DESKTOPS_H
+#pragma once
 
 #include "types.h"
 
@@ -11,5 +10,3 @@ void client_move_to_desktop(state_t *s, const char *name);
 
 void hide_client(state_t *s, client_t *cl);
 void show_client(state_t *s, client_t *cl);
-
-#endif
