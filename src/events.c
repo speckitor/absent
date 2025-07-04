@@ -23,7 +23,7 @@ static const event_handler_t handlers[XCB_LAST_EVENT] = {
     [XCB_DESTROY_NOTIFY] = destroy_notify,
     [XCB_KEY_PRESS] = key_press,
     [XCB_BUTTON_PRESS] = button_press,
-    [XCB_BUTTON_RELEASE] = (event_handler_t)button_release,
+    [XCB_BUTTON_RELEASE] = button_release,
     [XCB_MOTION_NOTIFY] = motion_notify,
 };
 
@@ -72,7 +72,7 @@ void unmap_notify(state_t *s, xcb_generic_event_t *ev) {
         make_layout(s);
     }
 
-    button_release(s);
+    button_release(s, NULL);
 
     clients_update_ewmh(s);
 
@@ -174,7 +174,7 @@ void destroy_notify(state_t *s, xcb_generic_event_t *ev) {
         client_focus(s, next);
     }
 
-    button_release(s);
+    button_release(s, NULL);
 }
 
 void key_press(state_t *s, xcb_generic_event_t *ev) {
@@ -235,7 +235,9 @@ void button_press(state_t *s, xcb_generic_event_t *ev) {
     }
 }
 
-void button_release(state_t *s) {
+void button_release(state_t *s, xcb_generic_event_t *ev) {
+    (void) ev;
+
     s->mouse->resizingcorner = CORNER_NONE;
     s->mouse->pressed_button = 0;
 
@@ -282,7 +284,7 @@ void send_event(state_t *s, client_t *cl, xcb_atom_t protocol) {
         s->c,
         xcb_icccm_get_wm_protocols(s->c, cl->wid, s->icccm[ICCCM_PROTOCOLS]),
         &reply, NULL)) {
-        for (int i = 0; i < reply.atoms_len; i++) {
+        for (size_t i = 0; i < reply.atoms_len; i++) {
             if (reply.atoms[i] == protocol) {
                 has_prot = 1;
                 break;

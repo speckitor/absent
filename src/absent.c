@@ -8,7 +8,6 @@
 
 #include "../config.h"
 #include "absent.h"
-#include "desktops.h"
 #include "events.h"
 #include "keys.h"
 #include "monitors.h"
@@ -43,7 +42,7 @@ state_t *setup() {
     setup_atoms(s);
 
     size_t length = sizeof(keybinds) / sizeof(keybinds[0]);
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         xcb_keycode_t *keycode = get_keycode(s, keybinds[i].key);
         if (keycode) {
             xcb_grab_key(

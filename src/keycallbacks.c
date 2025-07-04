@@ -18,6 +18,8 @@ static const char *layout_names[LAYOUTS_NUMBER] = {
 };
 
 void run(state_t *s, const char *command) {
+    (void) s;
+
     if (fork() == 0) {
         execl("/bin/sh", "sh", "-c", command, (char *)NULL);
         _exit(EXIT_FAILURE);
@@ -42,6 +44,8 @@ static int count_clients_on_desktop(state_t *s) {
 }
 
 void cyclefocusdown(state_t *s, const char *command) {
+    (void) command;
+
     if (s->clients && count_clients_on_desktop(s) > 0) {
         if (s->focus && s->focus->monitor != s->monitor_focus) {
             client_unfocus(s);
@@ -79,6 +83,8 @@ void cyclefocusdown(state_t *s, const char *command) {
 }
 
 void cyclefocusup(state_t *s, const char *command) {
+    (void) command;
+
     if (s->clients) {
         if (s->focus && s->focus->monitor != s->monitor_focus) {
             client_unfocus(s);
@@ -154,6 +160,8 @@ void setlayout(state_t *s, const char *command) {
 }
 
 void setfocustiled(state_t *s, const char *command) {
+    (void) command;
+
     if (s->focus && (s->focus->floating || s->focus->fullscreen)) {
         if (s->focus->floating) {
             s->focus->floating = false;
@@ -171,6 +179,8 @@ void setfocustiled(state_t *s, const char *command) {
 }
 
 void setfocusfullscreen(state_t *s, const char *command) {
+    (void) command;
+
     if (s->focus) {
         int fullscreen = s->focus->fullscreen != true;
         client_fullscreen(s, s->focus, fullscreen);
@@ -178,19 +188,19 @@ void setfocusfullscreen(state_t *s, const char *command) {
 }
 
 void movefocusdir(state_t *s, const char *command) {
+    (void) command;
+
     if (s->focus) {
-        int dx, dy;
+        int dx = 0;
+        int dy = 0;
+
         if (strcmp(command, "LEFT") == 0) {
             dx = -MOVE_WINODOW_STEP;
-            dy = 0;
         } else if (strcmp(command, "RIGHT") == 0) {
             dx = MOVE_WINODOW_STEP;
-            dy = 0;
         } else if (strcmp(command, "UP") == 0) {
-            dx = 0;
             dy = -MOVE_WINODOW_STEP;
         } else if (strcmp(command, "DOWN") == 0) {
-            dx = 0;
             dy = MOVE_WINODOW_STEP;
         }
 
@@ -207,6 +217,8 @@ void movefocusdir(state_t *s, const char *command) {
 }
 
 void swapmainfocus(state_t *s, const char *command) {
+    (void) command;
+
     if (s->focus && s->focus->monitor == monitor_contains_cursor(s) &&
         !s->focus->floating) {
         client_t *cl = s->clients;
@@ -226,6 +238,8 @@ void swapmainfocus(state_t *s, const char *command) {
 }
 
 void swapfocusdown(state_t *s, const char *command) {
+    (void) command;
+
     if (s->clients && s->focus && count_clients_on_desktop(s) > 1) {
         client_t *cl = s->focus->next;
         while (cl &&
@@ -242,6 +256,8 @@ void swapfocusdown(state_t *s, const char *command) {
 }
 
 void swapfocusup(state_t *s, const char *command) {
+    (void) command;
+
     if (s->clients && s->focus && count_clients_on_desktop(s) > 1) {
         client_t *prev = NULL;
         client_t *cl = s->clients;
@@ -261,12 +277,16 @@ void swapfocusup(state_t *s, const char *command) {
 }
 
 void destroyclient(state_t *s, const char *command) {
+    (void) command;
+
     if (s->focus) {
         client_kill(s, s->focus);
     }
 }
 
 void killclient(state_t *s, const char *command) {
+    (void) command;
+
     if (s->focus) {
         xcb_kill_client(s->c, s->focus->wid);
         xcb_flush(s->c);
@@ -274,6 +294,8 @@ void killclient(state_t *s, const char *command) {
 }
 
 void killwm(state_t *s, const char *command) {
+    (void) command;
+
     xcb_disconnect(s->c);
     clean(s);
     exit(0);

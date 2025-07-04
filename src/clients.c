@@ -317,7 +317,7 @@ void client_kill(state_t *s, client_t *cl) {
     if (xcb_icccm_get_wm_protocols_reply(s->c,
         xcb_icccm_get_wm_protocols_unchecked(s->c, cl->wid, s->icccm[ICCCM_PROTOCOLS]),
         &reply, NULL)) {
-        for (int i = 0; i < reply.atoms_len; i++) {
+        for (size_t i = 0; i < reply.atoms_len; i++) {
             if (reply.atoms[i] == s->icccm[ICCCM_DELETE_WINDOW]) {
                 has_del_atom = 1;
                 break;
@@ -438,34 +438,33 @@ void client_resize(state_t *s, client_t *cl, xcb_motion_notify_event_t *e) {
         }
     }
 
-    int new_x, new_y, new_width, new_height;
+    int new_x = cl->x;
+    int new_y = cl->y;
+    int new_width = cl->width;
+    int new_height = cl->height;
 
     switch (s->mouse->resizingcorner) {
         case CORNER_NONE:
             return;
         case BOTTOM_RIGHT:
-            new_x = cl->x;
-            new_y = cl->y;
-            new_width = cl->width + (e->root_x - s->mouse->root_x);
-            new_height = cl->height + (e->root_y - s->mouse->root_y);
+            new_width += e->root_x - s->mouse->root_x;
+            new_height += e->root_y - s->mouse->root_y;
             break;
         case TOP_RIGHT:
-            new_x = cl->x;
-            new_y = cl->y + (e->root_y - s->mouse->root_y);
-            new_width = cl->width + (e->root_x - s->mouse->root_x);
-            new_height = cl->height - (e->root_y - s->mouse->root_y);
+            new_y += e->root_y - s->mouse->root_y;
+            new_width += e->root_x - s->mouse->root_x;
+            new_height -= e->root_y - s->mouse->root_y;
             break;
         case BOTTOM_LEFT:
-            new_x = cl->x + (e->root_x - s->mouse->root_x);
-            new_y = cl->y;
-            new_width = cl->width - (e->root_x - s->mouse->root_x);
-            new_height = cl->height + (e->root_y - s->mouse->root_y);
+            new_x += e->root_x - s->mouse->root_x;
+            new_width -= e->root_x - s->mouse->root_x;
+            new_height += e->root_y - s->mouse->root_y;
             break;
         case TOP_LEFT:
-            new_x = cl->x + (e->root_x - s->mouse->root_x);
-            new_y = cl->y + (e->root_y - s->mouse->root_y);
-            new_width = cl->width - (e->root_x - s->mouse->root_x);
-            new_height = cl->height - (e->root_y - s->mouse->root_y);
+            new_x += e->root_x - s->mouse->root_x;
+            new_y += e->root_y - s->mouse->root_y;
+            new_width -= e->root_x - s->mouse->root_x;
+            new_height -= e->root_y - s->mouse->root_y;
             break;
     }
 

@@ -36,7 +36,7 @@ void make_layout(state_t *s) {
             horizontal(s, length);
             break;
         case PSEUDOFULLSCREEN:
-            pseudofullscreen(s, length);
+            pseudofullscreen(s);
             break;
         default:
             break;
@@ -117,7 +117,7 @@ void horizontal(state_t *s, int length) {
     }
 }
 
-void pseudofullscreen(state_t *s, int length) {
+void pseudofullscreen(state_t *s) {
     client_t *cl = s->clients;
     int i, x, y, w, h;
 

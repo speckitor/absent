@@ -65,14 +65,14 @@ void monitors_setup(state_t *s) {
 
         int desktops_setuped = 0;
 
-        for (int j = 0; j < sizeof(desktops) / sizeof(desktop_config_t); j++) {
+        for (long unsigned int j = 0; j < sizeof(desktops) / sizeof(desktop_config_t); j++) {
             if (strncmp(monitor_name, desktops[j].monitor_name,
                 strlen(desktops[j].monitor_name)) == 0) {
                 desktops_setuped = 1;
 
                 int number_desktops = 0;
 
-                for (int k = 0; k < sizeof(desktops[j].desktop_names) /
+                for (long unsigned int k = 0; k < sizeof(desktops[j].desktop_names) /
                      sizeof(desktops[j].desktop_names[0]); k++) {
                     if (!desktops[j].desktop_names[k]) {
                         break;
