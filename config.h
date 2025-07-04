@@ -18,9 +18,9 @@
 #define LAYOUT_GAP 5
 
 /*
-    floating-point number that specifies how tall or wide should be main window
-    (currently only in tiled layout)
-*/
+ * floating-point number that specifies how tall or wide should be main window
+ * (currently only in tiled layout)
+ */
 #define MAIN_WINDOW_AREA 0.5
 
 /* new window opens as main layout window */
@@ -34,9 +34,9 @@
 #define MIN_WINDOW_HEIGHT 100
 
 /*
-    windows border settings
-    width in pixels, colors in format: 0x(hex_color)
-*/
+ * windows border settings
+ * width in pixels, colors in format: 0x(hex_color)
+ */
 #define BORDER_WIDTH 1
 #define FOCUSED_BORDER_COLOR 0xf38ba8
 #define UNFOCUSED_BORDER_COLOR 0x9399b2
@@ -58,32 +58,32 @@
 #define POINTER_UPDATE_TIME 10
 
 /*
-    specifies desktops for each monitor, check monitors list with "xrandr"
-    maximum number of desktops for one monitor is 10
-    the default desktop names for monitor is numbers from 1 to 10
-*/
+ * specifies desktops for each monitor, check monitors list with "xrandr"
+ * maximum number of desktops for one monitor is 10
+ * the default desktop names for monitor is numbers from 1 to 10
+ */
 static const desktop_config_t desktops[] = {
     {"DP-1", {"1", "2", "3", "4", "5"}},
     {"DP-2", {"6", "7", "8", "9", "10"}},
 };
 
 /*
-    specifies keybinds
-    available functions:
-    run - execute command
-    cyclefocusdown, cyclefocusup - change focused window
-    setlayout - change layout
-    setfocustiled - add focused window to layout if it's floating
-    setfocusfullscreen - enable/disable fullscreen mode for fucosed window
-    movefocusdir - move focus window in 1 of 4 directions (LEFT, RIGHT, UP, DOWN)
-    swapmainfocus - swap focused window with main window in layout
-    swapfocusdown, swapfocusup - swap focused window with next/previous window in layout
-    destroyclient - kill focused window
-    killclient - kill focused window process
-    killwm - kill window manager
-    setcurrentdesktop - change current desktop
-    movefocustodesktop - moves focused window to chosen desktop
-*/
+ * specifies keybinds
+ * available functions:
+ * run - execute command
+ * cyclefocusdown, cyclefocusup - change focused window
+ * setlayout - change layout
+ * setfocustiled - add focused window to layout if it's floating
+ * setfocusfullscreen - enable/disable fullscreen mode for fucosed window
+ * movefocusdir - move focus window in 1 of 4 directions (LEFT, RIGHT, UP, DOWN)
+ * swapmainfocus - swap focused window with main window in layout
+ * swapfocusdown, swapfocusup - swap focused window with next/previous window in layout
+ * destroyclient - kill focused window
+ * killclient - kill focused window process
+ * killwm - kill window manager
+ * setcurrentdesktop - change current desktop
+ * movefocustodesktop - moves focused window to chosen desktop
+ */
 static const keybind_t keybinds[] = {
     {XK_Return, SUPER, run, "alacritty"},
     {XK_b, SUPER, run, "firefox"},
