@@ -207,6 +207,15 @@ void movefocusdir(state_t *s, const char *command) {
         uint32_t value_list[1] = {XCB_STACK_MODE_ABOVE};
         xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_STACK_MODE, value_list);
 
+        if (s->focus->fullscreen) {
+            s->focus->fullscreen = false;
+            xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->focus->wid, s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 0, 0);
+
+            uint32_t value_mask = XCB_CONFIG_WINDOW_BORDER_WIDTH;
+            uint32_t value_list[] = {BORDER_WIDTH};
+            xcb_configure_window(s->c, s->focus->wid, value_mask, value_list);
+        }
+
         xcb_flush(s->c);
 
         s->focus->floating = true;    
