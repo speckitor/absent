@@ -3,6 +3,12 @@
 #include "monitors.h"
 #include "types.h"
 
+static void (*layout_functions[LAYOUTS_NUMBER])(state_t *s, int number) = {
+    [TILED] = tiled,
+    [VERTICAL] = vertical,
+    [HORIZONTAL] = horizontal,
+};
+
 void make_layout(state_t *s) {
     if (!s->monitor_focus) {
         return;
@@ -11,38 +17,30 @@ void make_layout(state_t *s) {
     client_t *cl = s->clients;
     monitor_t *mon = s->monitor_focus;
 
-    int length = 0;
+    int number = 0;
 
     while (cl) {
         if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx &&
             !cl->floating && !cl->fullscreen && !cl->hidden) {
-            length++;
+            number++;
         }
         cl = cl->next;
     }
 
-    if (length == 0) {
+    if (number == 0) {
         return;
     }
 
-    switch (mon->desktops[mon->desktop_idx].layout) {
-        case TILED:
-            tiled(s, length);
-            break;
-        case VERTICAL:
-            vertical(s, length);
-            break;
-        case HORIZONTAL:
-            horizontal(s, length);
-            break;
-        default:
-            break;
-    }
+    for (layout_t i = 0; i < LAYOUTS_NUMBER; ++i) {
+        if (mon->desktops[mon->desktop_idx].layout == i) {
+            layout_functions[i](s, number); 
+        } 
+    } 
 
     xcb_flush(s->c);
 }
 
-void tiled(state_t *s, int length) {
+void tiled(state_t *s, int number) {
     client_t *cl = s->clients;
     int i, mw, ty, x, y, w, h;
 
@@ -51,7 +49,7 @@ void tiled(state_t *s, int length) {
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
-    mw = length > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA : mon->width - pad.left - pad.right;
+    mw = number > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA : mon->width - pad.left - pad.right;
     ty = pad.top;
 
     for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
@@ -65,19 +63,19 @@ void tiled(state_t *s, int length) {
             x = mon->x + mw + lg + pad.left;
             y = mon->y + ty;
             w = mon->width - mw - bw - lg - pad.left - pad.right;
-            h = (mon->height - ty - pad.bottom) / (length - i) - bw;
+            h = (mon->height - ty - pad.bottom) / (number - i) - bw;
             client_move_resize(s, cl, x, y, w, h);
             ty += h + bw + lg;
         }
     }
 }
 
-void vertical(state_t *s, int length) {
+void vertical(state_t *s, int number) {
     client_t *cl = s->clients;
     int i, tx, x, y, w, h;
 
     int bw = 2 * BORDER_WIDTH;
-    int lg = (length > 1) ? LAYOUT_GAP : 0;
+    int lg = (number > 1) ? LAYOUT_GAP : 0;
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
@@ -87,18 +85,18 @@ void vertical(state_t *s, int length) {
 
     for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
         x = mon->x + tx;
-        w = (mon->width - tx - pad.right) / (length - i) - bw;
+        w = (mon->width - tx - pad.right) / (number - i) - bw;
         client_move_resize(s, cl, x, y, w, h);
         tx += w + bw + lg;
     }
 }
 
-void horizontal(state_t *s, int length) {
+void horizontal(state_t *s, int number) {
     client_t *cl = s->clients;
     int i, ty, x, y, w, h;
 
     int bw = 2 * BORDER_WIDTH;
-    int lg = (length > 1) ? LAYOUT_GAP : 0;
+    int lg = (number > 1) ? LAYOUT_GAP : 0;
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
@@ -108,7 +106,7 @@ void horizontal(state_t *s, int length) {
 
     for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
         y = mon->y + ty;
-        h = (mon->height - ty - pad.bottom) / (length - i) - bw;
+        h = (mon->height - ty - pad.bottom) / (number - i) - bw;
         client_move_resize(s, cl, x, y, w, h);
         ty += h + bw + lg;
     }
