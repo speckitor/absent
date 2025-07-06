@@ -25,7 +25,6 @@ typedef enum {
     TILED = 0, 
     VERTICAL, 
     HORIZONTAL, 
-    PSEUDOFULLSCREEN,
     LAYOUTS_NUMBER 
 } layout_t;
 

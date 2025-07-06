@@ -7,7 +7,6 @@ void make_layout(state_t *s);
 void tiled(state_t *s, int length);
 void vertical(state_t *s, int length);
 void horizontal(state_t *s, int length);
-void pseudofullscreen(state_t *s);
 
 client_t *next_tiled(state_t *s, client_t *cl);
 

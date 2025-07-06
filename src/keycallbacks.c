@@ -14,7 +14,6 @@ static const char *layout_names[LAYOUTS_NUMBER] = {
     [TILED] = "TILED",
     [VERTICAL] = "VERTICAL",
     [HORIZONTAL] = "HORIZONTAL",
-    [PSEUDOFULLSCREEN] = "PSEUDOFULLSCREEN",
 };
 
 void run(state_t *s, const char *command) {

@@ -8,7 +8,7 @@
 
 /* use 1 to enable, 0 to disable */
 
-/* there are TILED, VERTICAL, HORIZONTAL and PSEUDOFULLSCREEN layouts */
+/* there are TILED, VERTICAL, HORIZONTAL layouts */
 #define DEFAULT_LAYOUT TILED
 
 /* gap between screen edges and windows */
@@ -93,7 +93,6 @@ static const keybind_t keybinds[] = {
     {XK_t, SUPER | SHIFT, setlayout, "TILED"},
     {XK_v, SUPER | SHIFT, setlayout, "VERTICAL"},
     {XK_h, SUPER | SHIFT, setlayout, "HORIZONTAL"},
-    {XK_p, SUPER | SHIFT, setlayout, "PSEUDOFULLSCREEN"},
     {XK_t, SUPER, setfocustiled, NULL},
     {XK_f, SUPER, setfocusfullscreen, NULL},
     {XK_h, ALT, movefocusdir, "LEFT"},
