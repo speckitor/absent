@@ -5,6 +5,7 @@
 
 static void (*layout_functions[LAYOUTS_NUMBER])(state_t *s, int number) = {
     [TILED] = tiled,
+    [RTILED] = rtiled,
     [VERTICAL] = vertical,
     [HORIZONTAL] = horizontal,
 };
@@ -61,6 +62,36 @@ void tiled(state_t *s, int number) {
             client_move_resize(s, cl, x, y, w, h);
         } else {
             x = mon->x + mw + lg + pad.left;
+            y = mon->y + ty;
+            w = mon->width - mw - bw - lg - pad.left - pad.right;
+            h = (mon->height - ty - pad.bottom) / (number - i) - bw;
+            client_move_resize(s, cl, x, y, w, h);
+            ty += h + bw + lg;
+        }
+    }
+}
+
+void rtiled(state_t *s, int number) {
+    client_t *cl = s->clients;
+    int i, mw, ty, x, y, w, h;
+
+    int bw = 2 * BORDER_WIDTH;
+    int lg = LAYOUT_GAP;
+    monitor_t *mon = s->monitor_focus;
+    padding_t pad = mon->padding;
+
+    mw = number > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA : mon->width - pad.left - pad.right;
+    ty = pad.top;
+
+    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
+        if (i < 1) {
+            x = mon->x + mon->width - mw - pad.right;
+            y = mon->y + ty;
+            w = mw - bw;
+            h = mon->height - bw - pad.top - pad.bottom;
+            client_move_resize(s, cl, x, y, w, h);
+        } else {
+            x = mon->x + pad.left;
             y = mon->y + ty;
             w = mon->width - mw - bw - lg - pad.left - pad.right;
             h = (mon->height - ty - pad.bottom) / (number - i) - bw;

@@ -8,8 +8,8 @@
 
 /* use 1 to enable, 0 to disable */
 
-/* there are TILED, VERTICAL, HORIZONTAL layouts */
-#define DEFAULT_LAYOUT TILED
+/* there are TILED, RTILED, VERTICAL, HORIZONTAL layouts */
+#define DEFAULT_LAYOUT RTILED
 
 /* gap between screen edges and windows */
 #define SCREEN_GAP 10
@@ -91,6 +91,7 @@ static const keybind_t keybinds[] = {
     {XK_j, SUPER, cyclefocusdown, NULL},
     {XK_k, SUPER, cyclefocusup, NULL},
     {XK_t, SUPER | SHIFT, setlayout, "TILED"},
+    {XK_r, SUPER | SHIFT, setlayout, "RTILED"},
     {XK_v, SUPER | SHIFT, setlayout, "VERTICAL"},
     {XK_h, SUPER | SHIFT, setlayout, "HORIZONTAL"},
     {XK_t, SUPER, setfocustiled, NULL},

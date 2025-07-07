@@ -12,6 +12,7 @@
 
 static const char *layout_names[LAYOUTS_NUMBER] = {
     [TILED] = "TILED",
+    [RTILED] = "RTILED",
     [VERTICAL] = "VERTICAL",
     [HORIZONTAL] = "HORIZONTAL",
 };

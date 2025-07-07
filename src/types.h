@@ -23,6 +23,7 @@ typedef struct {
 
 typedef enum { 
     TILED = 0, 
+    RTILED, 
     VERTICAL, 
     HORIZONTAL, 
     LAYOUTS_NUMBER 
