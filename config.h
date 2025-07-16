@@ -1,5 +1,4 @@
-#ifndef ABSENT_CONFIG_H
-#define ABSENT_CONFIG_H
+#pragma once
 
 #include <X11/keysym.h>
 
@@ -9,7 +8,7 @@
 /* use 1 to enable, 0 to disable */
 
 /* there are TILED, RTILED, VERTICAL, HORIZONTAL layouts */
-#define DEFAULT_LAYOUT RTILED
+#define DEFAULT_LAYOUT TILED
 
 /* gap between screen edges and windows */
 #define SCREEN_GAP 10
@@ -127,4 +126,3 @@ static const keybind_t keybinds[] = {
     {XK_9, SUPER | SHIFT, movefocustodesktop, "9"},
     {XK_0, SUPER | SHIFT, movefocustodesktop, "10"},
 };
-#endif
