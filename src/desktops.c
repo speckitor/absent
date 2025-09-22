@@ -11,7 +11,8 @@
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
-void setup_desktop_names(state_t *s, monitor_t *mon) {
+void setup_desktop_names(state_t *s, monitor_t *mon)
+{
     size_t length = 0;
     for (int i = 0; i < mon->number_desktops; i++) {
         length += strlen(mon->desktops[i].name) + 1;
@@ -24,14 +25,14 @@ void setup_desktop_names(state_t *s, monitor_t *mon) {
         ptr += strlen(mon->desktops[i].name) + 1;
     }
 
-    xcb_change_property(s->c, XCB_PROP_MODE_APPEND, s->root,
-        s->ewmh[EWMH_DESKTOP_NAMES], get_atom(s, "UTF8_STRING"),
-        8, length, names);
+    xcb_change_property(s->c, XCB_PROP_MODE_APPEND, s->root, s->ewmh[EWMH_DESKTOP_NAMES],
+                        get_atom(s, "UTF8_STRING"), 8, length, names);
 
     free(names);
 }
 
-void switch_desktop(state_t *s, const char *name) {
+void switch_desktop(state_t *s, const char *name)
+{
     monitor_t *mon = s->monitor_focus;
     int desktop_idx = -1;
     int desktop_id = -1;
@@ -73,11 +74,10 @@ void switch_desktop(state_t *s, const char *name) {
     client_t *cl = s->clients;
 
     while (cl) {
-        if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx &&
-            !cl->hidden && cl->desktop_idx != desktop_idx) {
+        if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx && !cl->hidden &&
+            cl->desktop_idx != desktop_idx) {
             hide_client(s, cl);
-        } else if (cl->monitor == mon && cl->desktop_idx == desktop_idx &&
-            cl->hidden) {
+        } else if (cl->monitor == mon && cl->desktop_idx == desktop_idx && cl->hidden) {
             show_client(s, cl);
         }
         cl = cl->next;
@@ -85,18 +85,19 @@ void switch_desktop(state_t *s, const char *name) {
 
     if (s->monitor_focus != mon) {
         s->monitor_focus = mon;
-        xcb_warp_pointer(s->c, XCB_NONE, s->root, 0, 0, 0, 0,
-            mon->x + mon->width / 2, mon->y + mon->height / 2);
+        xcb_warp_pointer(s->c, XCB_NONE, s->root, 0, 0, 0, 0, mon->x + mon->width / 2,
+                         mon->y + mon->height / 2);
     }
 
     mon->desktop_idx = desktop_idx;
-    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root,
-        s->ewmh[EWMH_CURRENT_DESKTOP], XCB_ATOM_CARDINAL, 32, 1, &desktop_id);
+    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
+                        XCB_ATOM_CARDINAL, 32, 1, &desktop_id);
     make_layout(s);
     xcb_flush(s->c);
 }
 
-void switch_desktop_by_idx(state_t *s, int desktop_id) {
+void switch_desktop_by_idx(state_t *s, int desktop_id)
+{
     monitor_t *mon = s->monitors;
     int desktop_idx = -1;
 
@@ -104,7 +105,7 @@ void switch_desktop_by_idx(state_t *s, int desktop_id) {
         for (int i = 0; i < mon->number_desktops; i++) {
             if (mon->desktops[i].desktop_id == desktop_id) {
                 desktop_idx = i;
-                break;  
+                break;
             }
         }
 
@@ -123,11 +124,10 @@ void switch_desktop_by_idx(state_t *s, int desktop_id) {
     client_t *cl = s->clients;
 
     while (cl) {
-        if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx &&
-            !cl->hidden && cl->desktop_idx != desktop_idx) {
+        if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx && !cl->hidden &&
+            cl->desktop_idx != desktop_idx) {
             hide_client(s, cl);
-        } else if (cl->monitor == mon && cl->desktop_idx == desktop_idx &&
-            cl->hidden) {
+        } else if (cl->monitor == mon && cl->desktop_idx == desktop_idx && cl->hidden) {
             show_client(s, cl);
         }
         cl = cl->next;
@@ -135,18 +135,19 @@ void switch_desktop_by_idx(state_t *s, int desktop_id) {
 
     if (s->monitor_focus != mon) {
         s->monitor_focus = mon;
-        xcb_warp_pointer(s->c, XCB_NONE, s->root, 0, 0, 0, 0,
-            mon->x + mon->width / 2, mon->y + mon->height / 2);
+        xcb_warp_pointer(s->c, XCB_NONE, s->root, 0, 0, 0, 0, mon->x + mon->width / 2,
+                         mon->y + mon->height / 2);
     }
 
     mon->desktop_idx = desktop_idx;
-    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root,
-        s->ewmh[EWMH_CURRENT_DESKTOP], XCB_ATOM_CARDINAL, 32, 1, &desktop_id);
+    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
+                        XCB_ATOM_CARDINAL, 32, 1, &desktop_id);
     make_layout(s);
     xcb_flush(s->c);
 }
 
-void client_move_to_desktop(state_t *s, const char *name) {
+void client_move_to_desktop(state_t *s, const char *name)
+{
     monitor_t *mon = s->monitor_focus;
     int desktop_idx = -1;
     int desktop_id = -1;
@@ -213,12 +214,14 @@ void client_move_to_desktop(state_t *s, const char *name) {
     xcb_flush(s->c);
 }
 
-void hide_client(state_t *s, client_t *cl) {
+void hide_client(state_t *s, client_t *cl)
+{
     cl->hidden = true;
     xcb_unmap_window(s->c, cl->wid);
 }
 
-void show_client(state_t *s, client_t *cl) {
+void show_client(state_t *s, client_t *cl)
+{
     cl->hidden = false;
     xcb_map_window(s->c, cl->wid);
 }

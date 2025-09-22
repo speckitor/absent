@@ -10,7 +10,8 @@
 #include "monitors.h"
 #include "types.h"
 
-void monitors_setup(state_t *s) {
+void monitors_setup(state_t *s)
+{
     const xcb_query_extension_reply_t *extension = xcb_get_extension_data(s->c, &xcb_randr_id);
 
     if (!extension || !extension->present) {
@@ -18,8 +19,10 @@ void monitors_setup(state_t *s) {
         return;
     }
 
-    xcb_randr_get_screen_resources_current_cookie_t res_cookie = xcb_randr_get_screen_resources_current(s->c, s->root);
-    xcb_randr_get_screen_resources_current_reply_t *res_reply = xcb_randr_get_screen_resources_current_reply(s->c, res_cookie, NULL);
+    xcb_randr_get_screen_resources_current_cookie_t res_cookie =
+        xcb_randr_get_screen_resources_current(s->c, s->root);
+    xcb_randr_get_screen_resources_current_reply_t *res_reply =
+        xcb_randr_get_screen_resources_current_reply(s->c, res_cookie, NULL);
 
     if (!res_reply) {
         xcb_disconnect(s->c);
@@ -31,15 +34,19 @@ void monitors_setup(state_t *s) {
     xcb_randr_output_t *outputs = xcb_randr_get_screen_resources_current_outputs(res_reply);
 
     for (int i = 0; i < number_outputs; i++) {
-        xcb_randr_get_output_info_cookie_t output_cookie = xcb_randr_get_output_info(s->c, outputs[i], XCB_CURRENT_TIME);
-        xcb_randr_get_output_info_reply_t *output_reply = xcb_randr_get_output_info_reply(s->c, output_cookie, NULL);
+        xcb_randr_get_output_info_cookie_t output_cookie =
+            xcb_randr_get_output_info(s->c, outputs[i], XCB_CURRENT_TIME);
+        xcb_randr_get_output_info_reply_t *output_reply =
+            xcb_randr_get_output_info_reply(s->c, output_cookie, NULL);
 
         if (!output_reply || output_reply->crtc == XCB_NONE) {
             continue;
         }
 
-        xcb_randr_get_crtc_info_cookie_t crtc_cookie = xcb_randr_get_crtc_info(s->c, output_reply->crtc, XCB_CURRENT_TIME);
-        xcb_randr_get_crtc_info_reply_t *crtc_reply = xcb_randr_get_crtc_info_reply(s->c, crtc_cookie, NULL);
+        xcb_randr_get_crtc_info_cookie_t crtc_cookie =
+            xcb_randr_get_crtc_info(s->c, output_reply->crtc, XCB_CURRENT_TIME);
+        xcb_randr_get_crtc_info_reply_t *crtc_reply =
+            xcb_randr_get_crtc_info_reply(s->c, crtc_cookie, NULL);
 
         if (!crtc_reply) {
             free(output_reply);
@@ -66,14 +73,15 @@ void monitors_setup(state_t *s) {
         int desktops_setuped = 0;
 
         for (long unsigned int j = 0; j < sizeof(desktops) / sizeof(desktop_config_t); j++) {
-            if (strncmp(monitor_name, desktops[j].monitor_name,
-                strlen(desktops[j].monitor_name)) == 0) {
+            if (strncmp(monitor_name, desktops[j].monitor_name, strlen(desktops[j].monitor_name)) ==
+                0) {
                 desktops_setuped = 1;
 
                 int number_desktops = 0;
 
-                for (long unsigned int k = 0; k < sizeof(desktops[j].desktop_names) /
-                     sizeof(desktops[j].desktop_names[0]); k++) {
+                for (long unsigned int k = 0;
+                     k < sizeof(desktops[j].desktop_names) / sizeof(desktops[j].desktop_names[0]);
+                     k++) {
                     if (!desktops[j].desktop_names[k]) {
                         break;
                     }
@@ -86,7 +94,8 @@ void monitors_setup(state_t *s) {
                 for (int k = 0; k < number_desktops; k++) {
                     monitor->desktops[k].desktop_id = s->number_desktops;
                     s->number_desktops++;
-                    snprintf(monitor->desktops[k].name, sizeof(monitor->desktops[k].name), "%s", desktops[j].desktop_names[k]);
+                    snprintf(monitor->desktops[k].name, sizeof(monitor->desktops[k].name), "%s",
+                             desktops[j].desktop_names[k]);
                     monitor->desktops[k].layout = DEFAULT_LAYOUT;
                 }
             }
@@ -117,8 +126,10 @@ void monitors_setup(state_t *s) {
     xcb_flush(s->c);
 }
 
-monitor_t *monitor_contains_cursor(state_t *s) {
-    xcb_query_pointer_reply_t *reply = xcb_query_pointer_reply(s->c, xcb_query_pointer(s->c, s->root), NULL);
+monitor_t *monitor_contains_cursor(state_t *s)
+{
+    xcb_query_pointer_reply_t *reply =
+        xcb_query_pointer_reply(s->c, xcb_query_pointer(s->c, s->root), NULL);
 
     if (!reply) {
         return s->monitors;

@@ -10,7 +10,8 @@ static void (*layout_functions[LAYOUTS_NUMBER])(state_t *s, int number) = {
     [HORIZONTAL] = horizontal,
 };
 
-void make_layout(state_t *s) {
+void make_layout(state_t *s)
+{
     if (!s->monitor_focus) {
         return;
     }
@@ -21,8 +22,8 @@ void make_layout(state_t *s) {
     int number = 0;
 
     while (cl) {
-        if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx &&
-            !cl->floating && !cl->fullscreen && !cl->hidden) {
+        if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx && !cl->floating &&
+            !cl->fullscreen && !cl->hidden) {
             number++;
         }
         cl = cl->next;
@@ -34,14 +35,15 @@ void make_layout(state_t *s) {
 
     for (layout_t i = 0; i < LAYOUTS_NUMBER; ++i) {
         if (mon->desktops[mon->desktop_idx].layout == i) {
-            layout_functions[i](s, number); 
-        } 
-    } 
+            layout_functions[i](s, number);
+        }
+    }
 
     xcb_flush(s->c);
 }
 
-void tiled(state_t *s, int number) {
+void tiled(state_t *s, int number)
+{
     client_t *cl = s->clients;
     int i, mw, ty, x, y, w, h;
 
@@ -50,7 +52,8 @@ void tiled(state_t *s, int number) {
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
-    mw = number > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA : mon->width - pad.left - pad.right;
+    mw = number > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA
+                    : mon->width - pad.left - pad.right;
     ty = pad.top;
 
     for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
@@ -71,7 +74,8 @@ void tiled(state_t *s, int number) {
     }
 }
 
-void rtiled(state_t *s, int number) {
+void rtiled(state_t *s, int number)
+{
     client_t *cl = s->clients;
     int i, mw, ty, x, y, w, h;
 
@@ -80,7 +84,8 @@ void rtiled(state_t *s, int number) {
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
-    mw = number > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA : mon->width - pad.left - pad.right;
+    mw = number > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA
+                    : mon->width - pad.left - pad.right;
     ty = pad.top;
 
     for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
@@ -101,7 +106,8 @@ void rtiled(state_t *s, int number) {
     }
 }
 
-void vertical(state_t *s, int number) {
+void vertical(state_t *s, int number)
+{
     client_t *cl = s->clients;
     int i, tx, x, y, w, h;
 
@@ -122,7 +128,8 @@ void vertical(state_t *s, int number) {
     }
 }
 
-void horizontal(state_t *s, int number) {
+void horizontal(state_t *s, int number)
+{
     client_t *cl = s->clients;
     int i, ty, x, y, w, h;
 
@@ -143,18 +150,17 @@ void horizontal(state_t *s, int number) {
     }
 }
 
-client_t *next_tiled(state_t *s, client_t *cl) {
-  while (cl && (cl->floating || 
-                cl->fullscreen || 
-                s->monitor_focus != cl->monitor ||
-                s->monitor_focus->desktop_idx != cl->desktop_idx)) {
-    cl = cl->next;
-  }
-  return cl;
+client_t *next_tiled(state_t *s, client_t *cl)
+{
+    while (cl && (cl->floating || cl->fullscreen || s->monitor_focus != cl->monitor ||
+                  s->monitor_focus->desktop_idx != cl->desktop_idx)) {
+        cl = cl->next;
+    }
+    return cl;
 }
 
-void client_move_resize(state_t *s, client_t *cl, int x, int y, int width,
-                        int height) {
+void client_move_resize(state_t *s, client_t *cl, int x, int y, int width, int height)
+{
     cl->x = x;
     cl->y = y;
     cl->width = width;
@@ -163,11 +169,8 @@ void client_move_resize(state_t *s, client_t *cl, int x, int y, int width,
     uint32_t value_mask;
     uint32_t value_list[4];
 
-    value_mask = 
-        XCB_CONFIG_WINDOW_X |
-        XCB_CONFIG_WINDOW_Y |
-        XCB_CONFIG_WINDOW_WIDTH | 
-        XCB_CONFIG_WINDOW_HEIGHT;
+    value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH |
+                 XCB_CONFIG_WINDOW_HEIGHT;
     value_list[0] = cl->x;
     value_list[1] = cl->y;
     value_list[2] = cl->width;
@@ -176,7 +179,8 @@ void client_move_resize(state_t *s, client_t *cl, int x, int y, int width,
     xcb_flush(s->c);
 }
 
-void swap_clients(state_t *s, client_t *cl1, client_t *cl2) {
+void swap_clients(state_t *s, client_t *cl1, client_t *cl2)
+{
     if (cl1 == cl2) {
         return;
     }

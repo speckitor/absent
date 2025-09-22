@@ -32,10 +32,7 @@
 #define MIN_WINDOW_WIDTH 100
 #define MIN_WINDOW_HEIGHT 100
 
-/*
- * windows border settings
- * width in pixels, colors in format: 0x(hex_color)
- */
+/* windows border settings width in pixels, colors in format: 0x(hex_color) */
 #define BORDER_WIDTH 1
 #define FOCUSED_BORDER_COLOR 0xf38ba8
 #define UNFOCUSED_BORDER_COLOR 0x9399b2
@@ -76,12 +73,10 @@ static const desktop_config_t desktops[] = {
  * setfocusfullscreen - enable/disable fullscreen mode for fucosed window
  * movefocusdir - move focus window in 1 of 4 directions (LEFT, RIGHT, UP, DOWN)
  * swapmainfocus - swap focused window with main window in layout
- * swapfocusdown, swapfocusup - swap focused window with next/previous window in layout
- * destroyclient - kill focused window
- * killclient - kill focused window process
- * killwm - kill window manager
- * setcurrentdesktop - change current desktop
- * movefocustodesktop - moves focused window to chosen desktop
+ * swapfocusdown, swapfocusup - swap focused window with next/previous window in
+ * layout destroyclient - kill focused window killclient - kill focused window
+ * process killwm - kill window manager setcurrentdesktop - change current
+ * desktop movefocustodesktop - moves focused window to chosen desktop
  */
 static const keybind_t keybinds[] = {
     {XK_Return, SUPER, run, "alacritty"},
