@@ -41,6 +41,7 @@ state_t *setup()
 
     s->number_desktops = 0;
 
+    s->changing_desktop = false;
     s->lastmotiontime = 0.0;
     s->mouse = calloc(1, sizeof(mouse_t));
     s->mouse->pressed_button = 0;

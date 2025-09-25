@@ -129,7 +129,8 @@ void cyclefocusup(state_t *s, const char *command)
 
 void setcurrentdesktop(state_t *s, const char *command)
 {
-    if (s->monitor_focus) {
+    if (s->monitor_focus && !s->changing_desktop) {
+        s->changing_desktop = true;
         switch_desktop(s, command);
 
         client_t *cl = s->clients;
@@ -141,6 +142,7 @@ void setcurrentdesktop(state_t *s, const char *command)
             }
             cl = cl->next;
         }
+        s->changing_desktop = false;
     }
 }
 
