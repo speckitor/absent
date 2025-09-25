@@ -4,7 +4,6 @@
 
 #include <xcb/xproto.h>
 
-#include "../config.h"
 #include "clients.h"
 #include "events.h"
 #include "layout.h"
@@ -31,15 +30,16 @@ void client_create(state_t *s, xcb_window_t wid)
     xcb_get_property_reply_t *type_reply = xcb_get_property_reply(s->c, type_cookie, &type_error);
 
     if (type_reply) {
-        if (type_reply->type == XCB_ATOM_ATOM && type_reply->format == 32 &&
-            type_reply->value_len > 0) {
+        bool type_reply_is_valid = type_reply->type == XCB_ATOM_ATOM && type_reply->format == 32 &&
+                                   type_reply->value_len > 0;
+        if (type_reply_is_valid) {
             xcb_atom_t *atoms = xcb_get_property_value(type_reply);
             int len = xcb_get_property_value_length(type_reply) / sizeof(xcb_atom_t);
 
             for (int i = 0; i < len; i++) {
                 if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_NORMAL]) {
                     floating = false;
-                } else if (atoms[i] == s->ewmh[EWMH_WINODW_TYPE_DIALOG]) {
+                } else if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_DIALOG]) {
                     floating = true;
                     break;
                 } else if (atoms[i] == s->ewmh[EWMH_WINDOW_TYPE_DOCK]) {
@@ -77,7 +77,7 @@ void client_create(state_t *s, xcb_window_t wid)
     cl->desktop_idx = cl->monitor->desktop_idx;
 
     clients = s->clients;
-    if (!clients || SET_NEW_WINDOW_MAIN) {
+    if (!clients || s->config->set_new_window_main) {
         cl->next = s->clients;
         s->clients = cl;
     } else {
@@ -90,8 +90,9 @@ void client_create(state_t *s, xcb_window_t wid)
 
     client_set_size_hints(s, cl);
 
-    if (cl->size_hints.max_width == cl->size_hints.min_width &&
-        cl->size_hints.max_height == cl->size_hints.min_height) {
+    bool max_eq_min_size = cl->size_hints.max_width == cl->size_hints.min_width &&
+                           cl->size_hints.max_height == cl->size_hints.min_height;
+    if (max_eq_min_size) {
         cl->floating = true;
     }
 
@@ -119,7 +120,7 @@ void client_create(state_t *s, xcb_window_t wid)
     value_list[1] = cl->y;
     value_list[2] = cl->width;
     value_list[3] = cl->height;
-    value_list[4] = BORDER_WIDTH;
+    value_list[4] = s->config->border_width;
     xcb_configure_window(s->c, wid, value_mask, value_list);
 
     cl->oldx = cl->x;
@@ -127,27 +128,30 @@ void client_create(state_t *s, xcb_window_t wid)
     cl->oldwidth = cl->width;
     cl->oldheight = cl->height;
 
-    value_list[0] = UNFOCUSED_BORDER_COLOR;
+    value_list[0] = s->config->unfocused_border_color;
     xcb_change_window_attributes(s->c, wid, XCB_CW_BORDER_PIXEL, value_list);
 
-    xcb_generic_error_t *error;
+    xcb_generic_error_t *state_error;
 
-    xcb_get_property_cookie_t cookie =
+    xcb_get_property_cookie_t state_cookie =
         xcb_get_property(s->c, 0, wid, s->ewmh[EWMH_STATE], XCB_ATOM_ATOM, 0, sizeof(xcb_atom_t));
-    xcb_get_property_reply_t *reply = xcb_get_property_reply(s->c, cookie, &error);
+    xcb_get_property_reply_t *state_reply =
+        xcb_get_property_reply(s->c, state_cookie, &state_error);
 
-    if (reply) {
-        if (reply->type == XCB_ATOM_ATOM && reply->format == 32 && reply->value_len > 0) {
-            xcb_atom_t state = *(xcb_atom_t *)xcb_get_property_value(reply);
+    if (state_reply) {
+        bool state_reply_is_valid = state_reply->type == XCB_ATOM_ATOM &&
+                                    state_reply->format == 32 && state_reply->value_len > 0;
+        if (state_reply_is_valid) {
+            xcb_atom_t state = *(xcb_atom_t *)xcb_get_property_value(state_reply);
             if (state == s->ewmh[EWMH_FULLSCREEN]) {
                 client_fullscreen(s, cl, true);
             }
         }
-        free(reply);
+        free(state_reply);
     }
 
-    if (error) {
-        free(error);
+    if (state_error) {
+        free(state_error);
     }
 
     grab_buttons(s, cl);
@@ -189,8 +193,9 @@ void make_dock(state_t *s, xcb_window_t wid)
             int bottom_end_x = strut[11];
 
             for (monitor_t *mon = s->monitors; mon != NULL; mon = mon->next) {
-                if ((left > mon->x) && (left < mon->x + mon->width - 1) &&
-                    (left_start_y < mon->y + mon->height) && (left_end_y >= mon->y)) {
+                bool dock_is_left = (left > mon->x) && (left < mon->x + mon->width - 1) &&
+                                    (left_start_y < mon->y + mon->height) && (left_end_y >= mon->y);
+                if (dock_is_left) {
                     int dx = left - mon->x;
 
                     if (mon->padding.left <= 0) {
@@ -200,9 +205,11 @@ void make_dock(state_t *s, xcb_window_t wid)
                     }
                 }
 
-                if ((mon->x + mon->width > s->screen->width_in_pixels - right) &&
-                    (s->screen->width_in_pixels - right > mon->x) &&
-                    (right_start_y < mon->y + mon->height) && (right_end_y >= mon->y)) {
+                bool dock_is_right = (mon->x + mon->width > s->screen->width_in_pixels - right) &&
+                                     (s->screen->width_in_pixels - right > mon->x) &&
+                                     (right_start_y < mon->y + mon->height) &&
+                                     (right_end_y >= mon->y);
+                if (dock_is_right) {
                     int dx = mon->x + mon->width - s->screen->width_in_pixels + right;
 
                     if (mon->padding.right <= 0) {
@@ -212,8 +219,9 @@ void make_dock(state_t *s, xcb_window_t wid)
                     }
                 }
 
-                if ((mon->y < top) && (top < mon->y + mon->height - 1) &&
-                    (top_start_x < mon->x + mon->width) && (top_end_x >= mon->x)) {
+                bool dock_is_top = (mon->y < top) && (top < mon->y + mon->height - 1) &&
+                                   (top_start_x < mon->x + mon->width) && (top_end_x >= mon->x);
+                if (dock_is_top) {
                     int dy = top - mon->y;
 
                     if (mon->padding.top <= 0) {
@@ -223,9 +231,11 @@ void make_dock(state_t *s, xcb_window_t wid)
                     }
                 }
 
-                if ((mon->y + mon->height > s->screen->height_in_pixels - bottom) &&
+                bool dock_is_bottom =
+                    (mon->y + mon->height > s->screen->height_in_pixels - bottom) &&
                     (s->screen->height_in_pixels - bottom > mon->y) &&
-                    (bottom_start_x < mon->x + mon->width) && (bottom_end_x >= mon->x)) {
+                    (bottom_start_x < mon->x + mon->width) && (bottom_end_x >= mon->x);
+                if (dock_is_bottom) {
                     int dy = mon->y + bottom;
 
                     if (mon->padding.bottom <= 0) {
@@ -256,8 +266,8 @@ void client_set_size_hints(state_t *s, client_t *cl)
             cl->size_hints.min_width = size_hints.min_width;
             cl->size_hints.min_height = size_hints.min_height;
         } else {
-            cl->size_hints.min_width = MIN_WINDOW_WIDTH;
-            cl->size_hints.min_height = MIN_WINDOW_HEIGHT;
+            cl->size_hints.min_width = s->config->min_window_width;
+            cl->size_hints.min_height = s->config->min_window_height;
         }
 
         if (size_hints.flags & XCB_ICCCM_SIZE_HINT_P_MAX_SIZE) {
@@ -268,8 +278,8 @@ void client_set_size_hints(state_t *s, client_t *cl)
             cl->size_hints.max_height = 10000;
         }
     } else {
-        cl->size_hints.min_width = MIN_WINDOW_WIDTH;
-        cl->size_hints.min_height = MIN_WINDOW_HEIGHT;
+        cl->size_hints.min_width = s->config->min_window_width;
+        cl->size_hints.min_height = s->config->min_window_height;
         cl->size_hints.max_width = 10000;
         cl->size_hints.max_height = 10000;
     }
@@ -480,7 +490,8 @@ void client_fullscreen(state_t *s, client_t *cl, bool fullscreen)
                             XCB_ATOM_ATOM, 32, 0, 0);
         uint32_t value_mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH |
                               XCB_CONFIG_WINDOW_HEIGHT | XCB_CONFIG_WINDOW_BORDER_WIDTH;
-        uint32_t value_list[] = {cl->oldx, cl->oldy, cl->oldwidth, cl->oldheight, BORDER_WIDTH};
+        uint32_t value_list[] = {cl->oldx, cl->oldy, cl->oldwidth, cl->oldheight,
+                                 s->config->border_width};
         xcb_configure_window(s->c, cl->wid, value_mask, value_list);
 
         value_list[0] = XCB_STACK_MODE_ABOVE;
@@ -541,7 +552,7 @@ void client_configure(state_t *s, client_t *cl)
     e.y = cl->y;
     e.width = cl->width;
     e.height = cl->height;
-    e.border_width = BORDER_WIDTH;
+    e.border_width = s->config->border_width;
     e.above_sibling = XCB_NONE;
     e.override_redirect = 0;
 
@@ -554,7 +565,7 @@ void client_unfocus(state_t *s)
         return;
     }
 
-    uint32_t value_list[] = {UNFOCUSED_BORDER_COLOR};
+    uint32_t value_list[] = {s->config->unfocused_border_color};
     xcb_change_window_attributes(s->c, s->focus->wid, XCB_CW_BORDER_PIXEL, value_list);
 
     xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
@@ -589,7 +600,7 @@ void client_focus(state_t *s, client_t *cl)
 
     send_event(s, cl, s->icccm[ICCCM_TAKE_FOCUS]);
 
-    uint32_t value_list[] = {FOCUSED_BORDER_COLOR};
+    uint32_t value_list[] = {s->config->focused_border_color};
     xcb_change_window_attributes(s->c, cl->wid, XCB_CW_BORDER_PIXEL, value_list);
 
     value_list[0] = XCB_STACK_MODE_ABOVE;
@@ -615,23 +626,23 @@ void grab_buttons(state_t *s, client_t *cl)
                         XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
                             XCB_EVENT_MASK_BUTTON_MOTION,
                         XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, 1,
-                        BUTTON_MOD);
+                        s->config->button_mod);
         xcb_grab_button(s->c, 0, cl->wid,
                         XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
                             XCB_EVENT_MASK_BUTTON_MOTION,
                         XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, 3,
-                        BUTTON_MOD);
+                        s->config->button_mod);
     } else {
         xcb_grab_button(s->c, 0, cl->wid,
                         XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
                             XCB_EVENT_MASK_BUTTON_MOTION,
                         XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, 1,
-                        BUTTON_MOD);
+                        s->config->button_mod);
         xcb_grab_button(s->c, 0, cl->wid,
                         XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
                             XCB_EVENT_MASK_BUTTON_MOTION,
                         XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, 3,
-                        BUTTON_MOD);
+                        s->config->button_mod);
     }
 }
 

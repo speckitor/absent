@@ -6,8 +6,8 @@
 #include <xcb/xcb_cursor.h>
 #include <xcb/xproto.h>
 
-#include "../config.h"
 #include "absent.h"
+#include "config.h"
 #include "events.h"
 #include "keys.h"
 #include "monitors.h"
@@ -16,6 +16,8 @@
 state_t *setup()
 {
     state_t *s = calloc(1, sizeof(state_t));
+
+    parse_config_file(s);
 
     s->c = xcb_connect(NULL, NULL);
 
@@ -42,13 +44,13 @@ state_t *setup()
 
     setup_atoms(s);
 
-    size_t length = sizeof(keybinds) / sizeof(keybinds[0]);
-    for (size_t i = 0; i < length; i++) {
-        xcb_keycode_t *keycode = get_keycode(s, keybinds[i].key);
-        if (keycode) {
-            xcb_grab_key(s->c, 0, s->root, keybinds[i].mod, *keycode, XCB_GRAB_MODE_ASYNC,
-                         XCB_GRAB_MODE_ASYNC);
+    for (size_t i = 0; i < 256; i++) {
+        xcb_keycode_t *keycode = get_keycode(s, s->config->keybinds[i].key);
+        if (!keycode) {
+            continue;
         }
+        xcb_grab_key(s->c, 0, s->root, s->config->keybinds[i].mods, *keycode, XCB_GRAB_MODE_ASYNC,
+                     XCB_GRAB_MODE_ASYNC);
     }
 
     xcb_cursor_context_t *ctx;
@@ -71,9 +73,9 @@ state_t *setup()
 
     xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
 
-    if (ENABLE_AUTOSTART) {
+    if (strlen(s->config->autostart) > 0) {
         if (fork() == 0) {
-            execl("/bin/sh", "sh", "-c", "autostartabsent", (char *)NULL);
+            execl("/bin/sh", "sh", "-c", s->config->autostart, (char *)NULL);
             _exit(EXIT_FAILURE);
         }
     }
@@ -124,7 +126,7 @@ void setup_atoms(state_t *s)
     s->ewmh[EWMH_WINDOW_TYPE_MENU] = get_atom(s, "_NET_WM_WINDOW_TYPE_MENU");
     s->ewmh[EWMH_WINDOW_TYPE_TOOLBAR] = get_atom(s, "_NET_WM_WINDOW_TYPE_TOOLBAR");
     s->ewmh[EWMH_WINDOW_TYPE_NORMAL] = get_atom(s, "_NET_WM_WINDOW_TYPE_NORMAL");
-    s->ewmh[EWMH_WINODW_TYPE_DIALOG] = get_atom(s, "_NET_WM_WINDOW_TYPE_DIALOG");
+    s->ewmh[EWMH_WINDOW_TYPE_DIALOG] = get_atom(s, "_NET_WM_WINDOW_TYPE_DIALOG");
     s->ewmh[EWMH_WINDOW_TYPE_DOCK] = get_atom(s, "_NET_WM_WINDOW_TYPE_DOCK");
     s->ewmh[EWMH_STRUT_PARTIAL] = get_atom(s, "_NET_WM_STRUT_PARTIAL");
     s->ewmh[EWMH_CHECK] = get_atom(s, "_NET_SUPPORTING_WM_CHECK");
@@ -152,6 +154,27 @@ void setup_atoms(state_t *s)
 
 void clean(state_t *s)
 {
+    free(s->config->autostart);
+
+    for (int i = 0; i < 8; ++i) {
+        if (s->config->desktops[i].monitor_name) {
+            free(s->config->desktops[i].monitor_name);
+            for (int j = 0; j < 10; ++j) {
+                if (s->config->desktops[i].desktop_names[j]) {
+                    free(s->config->desktops[i].desktop_names[j]);
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < 256; ++i) {
+        if (s->config->keybinds[i].param) {
+            free(s->config->keybinds[i].param);
+        }
+    }
+
+    free(s->config);
+
     free(s->mouse);
     client_t *cl = s->clients;
     client_t *next;

@@ -4,7 +4,6 @@
 #include <xcb/randr.h>
 #include <xcb/xcb.h>
 
-#include "../config.h"
 #include "absent.h"
 #include "desktops.h"
 #include "monitors.h"
@@ -57,10 +56,10 @@ void monitors_setup(state_t *s)
 
         monitor_t *monitor = calloc(1, sizeof(monitor_t));
 
-        monitor->padding.top = SCREEN_GAP;
-        monitor->padding.left = SCREEN_GAP;
-        monitor->padding.bottom = SCREEN_GAP;
-        monitor->padding.right = SCREEN_GAP;
+        monitor->padding.top = s->config->screen_gap;
+        monitor->padding.left = s->config->screen_gap;
+        monitor->padding.bottom = s->config->screen_gap;
+        monitor->padding.right = s->config->screen_gap;
 
         monitor->x = crtc_reply->x;
         monitor->y = crtc_reply->y;
@@ -72,17 +71,21 @@ void monitors_setup(state_t *s)
 
         int desktops_setuped = 0;
 
-        for (long unsigned int j = 0; j < sizeof(desktops) / sizeof(desktop_config_t); j++) {
-            if (strncmp(monitor_name, desktops[j].monitor_name, strlen(desktops[j].monitor_name)) ==
-                0) {
+        for (long unsigned int j = 0; j < 8; j++) {
+            if (!s->config->desktops[j].monitor_name) {
+                continue;
+            }
+            if (strncmp(monitor_name, s->config->desktops[j].monitor_name,
+                        strlen(s->config->desktops[j].monitor_name)) == 0) {
                 desktops_setuped = 1;
 
                 int number_desktops = 0;
 
                 for (long unsigned int k = 0;
-                     k < sizeof(desktops[j].desktop_names) / sizeof(desktops[j].desktop_names[0]);
+                     k < sizeof(s->config->desktops[j].desktop_names) /
+                             sizeof(s->config->desktops[j].desktop_names[0]);
                      k++) {
-                    if (!desktops[j].desktop_names[k]) {
+                    if (!s->config->desktops[j].desktop_names[k]) {
                         break;
                     }
                     number_desktops++;
@@ -95,8 +98,8 @@ void monitors_setup(state_t *s)
                     monitor->desktops[k].desktop_id = s->number_desktops;
                     s->number_desktops++;
                     snprintf(monitor->desktops[k].name, sizeof(monitor->desktops[k].name), "%s",
-                             desktops[j].desktop_names[k]);
-                    monitor->desktops[k].layout = DEFAULT_LAYOUT;
+                             s->config->desktops[j].desktop_names[k]);
+                    monitor->desktops[k].layout = s->config->default_layout;
                 }
             }
         }
@@ -111,7 +114,7 @@ void monitors_setup(state_t *s)
                 monitor->desktops[k].desktop_id = s->number_desktops;
                 s->number_desktops++;
                 snprintf(monitor->desktops[k].name, sizeof(monitor->desktops[k].name), "%d", k + 1);
-                monitor->desktops[k].layout = DEFAULT_LAYOUT;
+                monitor->desktops[k].layout = s->config->default_layout;
             }
         }
 

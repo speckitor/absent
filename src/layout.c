@@ -1,6 +1,4 @@
 #include "layout.h"
-#include "../config.h"
-#include "monitors.h"
 #include "types.h"
 
 static void (*layout_functions[LAYOUTS_NUMBER])(state_t *s, int number) = {
@@ -47,12 +45,12 @@ void tiled(state_t *s, int number)
     client_t *cl = s->clients;
     int i, mw, ty, x, y, w, h;
 
-    int bw = 2 * BORDER_WIDTH;
-    int lg = LAYOUT_GAP;
+    int bw = 2 * s->config->border_width;
+    int lg = s->config->layout_gap;
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
-    mw = number > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA
+    mw = number > 1 ? (mon->width - pad.left - pad.right) * s->config->main_window_area
                     : mon->width - pad.left - pad.right;
     ty = pad.top;
 
@@ -79,12 +77,12 @@ void rtiled(state_t *s, int number)
     client_t *cl = s->clients;
     int i, mw, ty, x, y, w, h;
 
-    int bw = 2 * BORDER_WIDTH;
-    int lg = LAYOUT_GAP;
+    int bw = 2 * s->config->border_width;
+    int lg = s->config->layout_gap;
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
-    mw = number > 1 ? (mon->width - pad.left - pad.right) * MAIN_WINDOW_AREA
+    mw = number > 1 ? (mon->width - pad.left - pad.right) * s->config->main_window_area
                     : mon->width - pad.left - pad.right;
     ty = pad.top;
 
@@ -111,8 +109,8 @@ void vertical(state_t *s, int number)
     client_t *cl = s->clients;
     int i, tx, x, y, w, h;
 
-    int bw = 2 * BORDER_WIDTH;
-    int lg = (number > 1) ? LAYOUT_GAP : 0;
+    int bw = 2 * s->config->border_width;
+    int lg = (number > 1) ? s->config->layout_gap : 0;
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
@@ -133,8 +131,8 @@ void horizontal(state_t *s, int number)
     client_t *cl = s->clients;
     int i, ty, x, y, w, h;
 
-    int bw = 2 * BORDER_WIDTH;
-    int lg = (number > 1) ? LAYOUT_GAP : 0;
+    int bw = 2 * s->config->border_width;
+    int lg = (number > 1) ? s->config->layout_gap : 0;
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 

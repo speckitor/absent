@@ -1,28 +1,32 @@
 CC = gcc
 CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra
-LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr 
+LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr -lconfig
 SRC_FILES = ./src/*.c
 
+CFG_FILES = ./config
 BIN_DIR = /usr/local/bin
-EXEC_FILE = absent
-AUTOSTART_FILE = autostartabsent
-SESSION_FILE = $(EXEC_FILE).desktop
-SESSION_DIR = /usr/share/xsessions
+BINARY = absent
+DESKTOP = $(BINARY).desktop
+DESKTOP_DIR = /usr/share/xsessions
+CFG = $(BINARY).cfg
+GLOBAL_CFG_DIR = /etc/absent
 
 all: compile
 
-copy: clean
-	mkdir -p $(SESSION_DIR)
-	cp $(EXEC_FILE) $(BIN_DIR)
-	cp $(AUTOSTART_FILE) $(BIN_DIR)
-	cp $(SESSION_FILE) $(SESSION_DIR)
-
 compile: 
-	$(CC) -o $(EXEC_FILE) $(SRC_FILES) $(CFLAGS) $(LIBS)
+	$(CC) -o $(BINARY) $(SRC_FILES) $(CFLAGS) $(LIBS)
+
+install: compile
+	install -Dm755 $(BINARY) $(BIN_DIR)/$(BINARY)
+	install -Dm644 $(CFG_FILES)/$(DESKTOP) $(DESKTOP_DIR)/$(DESKTOP)
+	install -Dm644 $(CFG_FILES)/$(CFG) $(GLOBAL_CFG_DIR)/$(CFG)
+
+uninstall:
+	rm -f $(BIN_DIR)/$(BINARY)
+	rm -f $(DESKTOP_DIR)/$(DESKTOP)
+	rm -f $(GLOBAL_CFG_DIR)/$(CFG)
 
 clean:
-	rm -f $(BIN_DIR)/$(EXEC_FILE)
-	rm -f $(SESSION_DIR)/$(SESSION_FILE)
-	rm -f $(BIN_DIR)/$(AUTOSTART_FILE)
+	rm -f $(BINARY)
 
-.PHONY: all copy install clean
+.PHONY: all compile install uninstall clean

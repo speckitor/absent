@@ -26,7 +26,7 @@ int key_cmp(state_t *s, keybind_t keybind, xcb_keycode_t event_keycode, uint16_t
         return 0;
     }
 
-    if (*keycode == event_keycode && keybind.mod == mod) {
+    if (*keycode == event_keycode && keybind.mods == mod) {
         return 1;
     }
 

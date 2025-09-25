@@ -6,7 +6,6 @@
 #include <xcb/xcb_icccm.h>
 #include <xcb/xproto.h>
 
-#include "../config.h"
 #include "clients.h"
 #include "desktops.h"
 #include "events.h"
@@ -186,10 +185,10 @@ void key_press(state_t *s, xcb_generic_event_t *ev)
 
     s->monitor_focus = monitor_contains_cursor(s);
 
-    int length = sizeof(keybinds) / sizeof(keybinds[0]);
+    int length = sizeof(s->config->keybinds) / sizeof(s->config->keybinds[0]);
     for (int i = 0; i < length; i++) {
-        if (key_cmp(s, keybinds[i], e->detail, e->state)) {
-            keybinds[i].callback(s, keybinds[i].command);
+        if (key_cmp(s, s->config->keybinds[i], e->detail, e->state)) {
+            s->config->keybinds[i].callback(s, s->config->keybinds[i].param);
         }
     }
 
@@ -223,7 +222,7 @@ void button_press(state_t *s, xcb_generic_event_t *ev)
         xcb_flush(s->c);
     }
 
-    if (e->state & BUTTON_MOD) {
+    if (e->state & s->config->button_mod) {
         cl->floating = true;
         make_layout(s);
         s->mouse->pressed_button = e->detail;
@@ -232,7 +231,7 @@ void button_press(state_t *s, xcb_generic_event_t *ev)
 
         if (s->focus->fullscreen) {
             s->focus->fullscreen = false;
-            uint32_t value_list[] = {BORDER_WIDTH};
+            uint32_t value_list[] = {s->config->border_width};
             xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_BORDER_WIDTH, value_list);
         }
     }
@@ -253,7 +252,7 @@ void motion_notify(state_t *s, xcb_generic_event_t *ev)
     xcb_motion_notify_event_t *e = (xcb_motion_notify_event_t *)ev;
 
     uint32_t current_time = e->time;
-    if ((current_time - s->lastmotiontime) <= POINTER_UPDATE_TIME) {
+    if ((current_time - s->lastmotiontime) <= s->config->pointer_update_time) {
         return;
     }
 
@@ -261,7 +260,7 @@ void motion_notify(state_t *s, xcb_generic_event_t *ev)
         return;
     }
 
-    if (s->mouse->pressed_button == 1) {
+    if (s->mouse->pressed_button == s->config->move_button) {
         s->monitor_focus = monitor_contains_cursor(s);
         s->focus->monitor = s->monitor_focus;
         s->focus->desktop_idx = s->monitor_focus->desktop_idx;
@@ -270,7 +269,7 @@ void motion_notify(state_t *s, xcb_generic_event_t *ev)
         int y = s->focus->y + (e->root_y - s->mouse->root_y);
 
         client_move(s, s->focus, x, y);
-    } else if (s->mouse->pressed_button == 3) {
+    } else if (s->mouse->pressed_button == s->config->resize_button) {
         client_resize(s, s->focus, e);
     }
 

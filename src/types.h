@@ -11,14 +11,14 @@ typedef void (*keycallback_t)(state_t *s, const char *command);
 
 typedef struct {
     unsigned long key;
-    uint16_t mod;
+    uint16_t mods;
     keycallback_t callback;
-    const char *command;
+    char *param;
 } keybind_t;
 
 typedef struct {
-    const char monitor_name[16];
-    const char *desktop_names[10];
+    char *monitor_name;
+    char *desktop_names[10];
 } desktop_config_t;
 
 typedef enum {
@@ -28,6 +28,56 @@ typedef enum {
     HORIZONTAL,
     LAYOUTS_NUMBER
 } layout_t;
+
+typedef struct {
+    const char *name;
+    unsigned long keysym;
+} keyname_keysym_t;
+
+typedef struct {
+    const char *name;
+    int button;
+} buttonname_buttonnum_t;
+
+typedef struct {
+    const char *name;
+    uint16_t mod;
+} modname_mod_t;
+
+typedef struct {
+    const char *name;
+    layout_t layout;
+} layoutname_layout_t;
+
+typedef struct {
+    const char *name;
+    keycallback_t callback;
+} cbname_cb_t;
+
+typedef struct {
+    char *autostart;
+
+    layout_t default_layout;
+    int screen_gap;
+    int layout_gap;
+    double main_window_area;
+    int set_new_window_main;
+
+    int min_window_width;
+    int min_window_height;
+    int border_width;
+    int focused_border_color;
+    int unfocused_border_color;
+
+    int move_window_step;
+    uint16_t button_mod;
+    int move_button;
+    int resize_button;
+    int pointer_update_time;
+
+    desktop_config_t desktops[8];
+    keybind_t keybinds[256];
+} wm_config_t;
 
 typedef struct monitor_t monitor_t;
 
@@ -118,7 +168,7 @@ typedef enum {
     EWMH_WINDOW_TYPE_MENU,
     EWMH_WINDOW_TYPE_TOOLBAR,
     EWMH_WINDOW_TYPE_NORMAL,
-    EWMH_WINODW_TYPE_DIALOG,
+    EWMH_WINDOW_TYPE_DIALOG,
     EWMH_WINDOW_TYPE_DOCK,
     EWMH_STRUT_PARTIAL,
     EWMH_CHECK,
@@ -126,6 +176,8 @@ typedef enum {
 } ewmh_atoms_t;
 
 struct state_t {
+    wm_config_t *config;
+
     xcb_connection_t *c;
     xcb_screen_t *screen;
     xcb_window_t root;

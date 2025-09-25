@@ -74,10 +74,15 @@ void switch_desktop(state_t *s, const char *name)
     client_t *cl = s->clients;
 
     while (cl) {
-        if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx && !cl->hidden &&
-            cl->desktop_idx != desktop_idx) {
+        bool client_is_on_current_destkop = cl->monitor == mon &&
+                                            cl->desktop_idx == mon->desktop_idx && !cl->hidden &&
+                                            cl->desktop_idx != desktop_idx;
+        bool client_is_on_future_desktop =
+            cl->monitor == mon && cl->desktop_idx == desktop_idx && cl->hidden;
+
+        if (client_is_on_current_destkop) {
             hide_client(s, cl);
-        } else if (cl->monitor == mon && cl->desktop_idx == desktop_idx && cl->hidden) {
+        } else if (client_is_on_future_desktop) {
             show_client(s, cl);
         }
         cl = cl->next;
@@ -124,10 +129,15 @@ void switch_desktop_by_idx(state_t *s, int desktop_id)
     client_t *cl = s->clients;
 
     while (cl) {
-        if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx && !cl->hidden &&
-            cl->desktop_idx != desktop_idx) {
+        bool client_is_on_current_destkop = cl->monitor == mon &&
+                                            cl->desktop_idx == mon->desktop_idx && !cl->hidden &&
+                                            cl->desktop_idx != desktop_idx;
+        bool client_is_on_future_desktop =
+            cl->monitor == mon && cl->desktop_idx == desktop_idx && cl->hidden;
+
+        if (client_is_on_current_destkop) {
             hide_client(s, cl);
-        } else if (cl->monitor == mon && cl->desktop_idx == desktop_idx && cl->hidden) {
+        } else if (client_is_on_future_desktop) {
             show_client(s, cl);
         }
         cl = cl->next;

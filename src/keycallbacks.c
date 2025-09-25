@@ -1,8 +1,9 @@
+#include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "../config.h"
 #include "absent.h"
 #include "clients.h"
 #include "desktops.h"
@@ -11,10 +12,10 @@
 #include "monitors.h"
 
 static const char *layout_names[LAYOUTS_NUMBER] = {
-    [TILED] = "TILED",
-    [RTILED] = "RTILED",
-    [VERTICAL] = "VERTICAL",
-    [HORIZONTAL] = "HORIZONTAL",
+    [TILED] = "Tiled",
+    [RTILED] = "Rtiled",
+    [VERTICAL] = "Vertical",
+    [HORIZONTAL] = "Horizontal",
 };
 
 void run(state_t *s, const char *command)
@@ -203,14 +204,14 @@ void movefocusdir(state_t *s, const char *command)
         int dx = 0;
         int dy = 0;
 
-        if (strcmp(command, "LEFT") == 0) {
-            dx = -MOVE_WINODOW_STEP;
-        } else if (strcmp(command, "RIGHT") == 0) {
-            dx = MOVE_WINODOW_STEP;
-        } else if (strcmp(command, "UP") == 0) {
-            dy = -MOVE_WINODOW_STEP;
-        } else if (strcmp(command, "DOWN") == 0) {
-            dy = MOVE_WINODOW_STEP;
+        if (strcmp(command, "Left") == 0) {
+            dx = -s->config->move_window_step;
+        } else if (strcmp(command, "Right") == 0) {
+            dx = s->config->move_window_step;
+        } else if (strcmp(command, "Up") == 0) {
+            dy = -s->config->move_window_step;
+        } else if (strcmp(command, "Down") == 0) {
+            dy = s->config->move_window_step;
         }
 
         uint32_t value_list[1] = {XCB_STACK_MODE_ABOVE};
@@ -222,7 +223,7 @@ void movefocusdir(state_t *s, const char *command)
                                 s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 0, 0);
 
             uint32_t value_mask = XCB_CONFIG_WINDOW_BORDER_WIDTH;
-            uint32_t value_list[] = {BORDER_WIDTH};
+            uint32_t value_list[] = {s->config->border_width};
             xcb_configure_window(s->c, s->focus->wid, value_mask, value_list);
         }
 
@@ -320,5 +321,18 @@ void killwm(state_t *s, const char *command)
 
     xcb_disconnect(s->c);
     clean(s);
-    exit(0);
+    exit(EXIT_SUCCESS);
+}
+
+void restartwm(state_t *s, const char *command)
+{
+    clean(s);
+
+    char cmd[64];
+    snprintf(cmd, sizeof(cmd), "pkill -TERM -P %d", getpid());
+    system(cmd);
+
+    execl("/bin/sh", "sh", "-c", "absent", (char *)NULL);
+    perror("execl");
+    exit(EXIT_FAILURE);
 }
