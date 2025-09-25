@@ -323,16 +323,3 @@ void killwm(state_t *s, const char *command)
     clean(s);
     exit(EXIT_SUCCESS);
 }
-
-void restartwm(state_t *s, const char *command)
-{
-    clean(s);
-
-    char cmd[64];
-    snprintf(cmd, sizeof(cmd), "pkill -TERM -P %d", getpid());
-    system(cmd);
-
-    execl("/bin/sh", "sh", "-c", "absent", (char *)NULL);
-    perror("execl");
-    exit(EXIT_FAILURE);
-}

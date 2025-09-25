@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -10,12 +11,17 @@
 #include "config.h"
 #include "events.h"
 #include "keys.h"
+#include "logs.h"
 #include "monitors.h"
 #include "types.h"
 
 state_t *setup()
 {
     state_t *s = calloc(1, sizeof(state_t));
+
+    if (!log_init(s, "/tmp/absent.log")) {
+        exit(EXIT_FAILURE);
+    }
 
     parse_config_file(s);
 
@@ -154,6 +160,10 @@ void setup_atoms(state_t *s)
 
 void clean(state_t *s)
 {
+    log_msg(s, "Cleaning memory");
+
+    log_close(s);
+
     free(s->config->autostart);
 
     for (int i = 0; i < 8; ++i) {

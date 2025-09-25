@@ -6,6 +6,7 @@
 
 #include "config.h"
 #include "keycallbacks.h"
+#include "logs.h"
 #include "types.h"
 
 static const keyname_keysym_t key_mapping[] = {
@@ -203,33 +204,32 @@ static const cbname_cb_t callback_mapping[] = {
     {"destroyclient", destroyclient},
     {"killclient", killclient},
     {"killwm", killwm},
-    {"restartwm", restartwm},
 };
 
-static void parse_variable_err(char *error_field)
+static void parse_variable_err(state_t *s, char *error_field)
 {
-    fprintf(stderr, "No '%s' setting in config file.\n", error_field);
+    log_msg(s, "No '%s' setting in config file.\n", error_field);
     exit(EXIT_FAILURE);
 }
 
 static void parse_config_int(state_t *s, config_t *cfg, char *name, int *variable)
 {
     if (!config_lookup_int(cfg, name, variable)) {
-        parse_variable_err(name);
+        parse_variable_err(s, name);
     }
 }
 
 static void parse_config_float(state_t *s, config_t *cfg, char *name, double *variable)
 {
     if (!config_lookup_float(cfg, name, variable)) {
-        parse_variable_err(name);
+        parse_variable_err(s, name);
     }
 }
 
 static void parse_config_bool(state_t *s, config_t *cfg, char *name, int *variable)
 {
     if (!config_lookup_bool(cfg, name, variable)) {
-        parse_variable_err(name);
+        parse_variable_err(s, name);
     }
 }
 
@@ -238,7 +238,7 @@ static void parse_config_desktop(state_t *s, config_t *cfg, config_setting_t *mo
     const char *tmp;
     config_setting_lookup_string(mon, "mon", &tmp);
     if (!tmp) {
-        parse_variable_err("mon");
+        parse_variable_err(s, "mon");
     } else {
         s->config->desktops[i].monitor_name = strdup(tmp);
     }
@@ -251,7 +251,7 @@ static void parse_config_desktop(state_t *s, config_t *cfg, config_setting_t *mo
                 strdup(config_setting_get_string_elem(mon_desktops, j));
         }
     } else {
-        parse_variable_err("desktop_names");
+        parse_variable_err(s, "desktop_names");
     }
 }
 
@@ -265,7 +265,7 @@ static void parse_config_desktops(state_t *s, config_t *cfg)
             parse_config_desktop(s, cfg, mon, i);
         }
     } else {
-        parse_variable_err("desktops");
+        parse_variable_err(s, "desktops");
     }
 }
 
@@ -282,7 +282,7 @@ static void parse_config_keybind(state_t *s, config_t *cfg, config_setting_t *ke
 {
     const char *key;
     if (!config_setting_lookup_string(keybind, "key", &key)) {
-        parse_variable_err("key");
+        parse_variable_err(s, "key");
     } else {
         for (int j = 0; j < sizeof(key_mapping) / sizeof(key_mapping[0]); ++j) {
             if (strcmp(key_mapping[j].name, key) == 0) {
@@ -300,17 +300,17 @@ static void parse_config_keybind(state_t *s, config_t *cfg, config_setting_t *ke
             config_keybind_add_mod(s, &s->config->keybinds[i].mods, mod);
         }
     } else {
-        parse_variable_err("mods");
+        parse_variable_err(s, "mods");
     }
 
     if (s->config->keybinds[i].mods == 0) {
-        fprintf(stderr, "No modifiers provided\n");
+        log_msg(s, "No modifiers provided\n");
         exit(EXIT_FAILURE);
     }
 
     const char *action;
     if (!config_setting_lookup_string(keybind, "action", &action)) {
-        parse_variable_err("action");
+        parse_variable_err(s, "action");
     } else {
         for (int j = 0; j < sizeof(callback_mapping) / sizeof(callback_mapping[0]); ++j) {
             if (strcmp(callback_mapping[j].name, action) == 0) {
@@ -337,7 +337,7 @@ static void parse_config_keybinds(state_t *s, config_t *cfg)
             parse_config_keybind(s, cfg, keybind, i);
         }
     } else {
-        parse_variable_err("keybinds");
+        parse_variable_err(s, "keybinds");
     }
 }
 
@@ -365,7 +365,7 @@ void parse_config_file(state_t *s)
         if (config_read_file(&cfg, path)) {
             loaded = true;
         } else {
-            fprintf(stderr, "Error reading home config at %s:%d - %s\n", config_error_file(&cfg),
+            log_msg(s, "Error reading home config at %s:%d - %s\n", config_error_file(&cfg),
                     config_error_line(&cfg), config_error_text(&cfg));
         }
     }
@@ -375,7 +375,7 @@ void parse_config_file(state_t *s)
         if (config_read_file(&cfg, etcpath)) {
             loaded = true;
         } else {
-            fprintf(stderr, "Error reading etc config at %s:%d - %s\n", config_error_file(&cfg),
+            log_msg(s, "Error reading home config at %s:%d - %s\n", config_error_file(&cfg),
                     config_error_line(&cfg), config_error_text(&cfg));
         }
     }
@@ -387,7 +387,7 @@ void parse_config_file(state_t *s)
 
     const char *autostart;
     if (!config_lookup_string(&cfg, "autostart", &autostart)) {
-        parse_variable_err("autostart");
+        parse_variable_err(s, "autostart");
     } else {
         s->config->autostart = strdup(autostart);
         if (!s->config->autostart) {
@@ -398,7 +398,7 @@ void parse_config_file(state_t *s)
 
     const char *default_layout;
     if (!config_lookup_string(&cfg, "default_layout", &default_layout)) {
-        parse_variable_err("default_layout");
+        parse_variable_err(s, "default_layout");
     } else {
         for (int i = 0; i < (sizeof(layout_mapping) / sizeof(layout_mapping[0])); ++i) {
             if (strcmp(layout_mapping[i].name, default_layout) == 0) {
@@ -424,7 +424,7 @@ void parse_config_file(state_t *s)
 
     const char *button_mod;
     if (!config_lookup_string(&cfg, "button_mod", &button_mod)) {
-        parse_variable_err("button_mod");
+        parse_variable_err(s, "button_mod");
     } else {
         for (int i = 0; i < (sizeof(mod_mapping) / sizeof(mod_mapping[0])); ++i) {
             if (strcmp(mod_mapping[i].name, button_mod) == 0) {
@@ -436,7 +436,7 @@ void parse_config_file(state_t *s)
 
     const char *move_button;
     if (!config_lookup_string(&cfg, "move_button", &move_button)) {
-        parse_variable_err("move_button");
+        parse_variable_err(s, "move_button");
     } else {
         for (int i = 0; i < (sizeof(button_mapping) / sizeof(button_mapping[0])); ++i) {
             if (strcmp(button_mapping[i].name, move_button) == 0) {
@@ -448,7 +448,7 @@ void parse_config_file(state_t *s)
 
     const char *resize_button;
     if (!config_lookup_string(&cfg, "resize_button", &resize_button)) {
-        parse_variable_err("resize_button");
+        parse_variable_err(s, "resize_button");
     } else {
         for (int i = 0; i < (sizeof(button_mapping) / sizeof(button_mapping[0])); ++i) {
             if (strcmp(button_mapping[i].name, resize_button) == 0) {

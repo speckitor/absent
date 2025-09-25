@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
@@ -176,6 +177,8 @@ typedef enum {
 } ewmh_atoms_t;
 
 struct state_t {
+    FILE *log;
+
     wm_config_t *config;
 
     xcb_connection_t *c;
