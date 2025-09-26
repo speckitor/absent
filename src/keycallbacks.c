@@ -1,11 +1,10 @@
-#include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "absent.h"
 #include "clients.h"
+#include "config.h"
 #include "desktops.h"
 #include "keycallbacks.h"
 #include "layout.h"
@@ -328,7 +327,51 @@ void restartwm(state_t *s, const char *command)
 {
     (void)command;
 
-    xcb_disconnect(s->c);
-    clean(s);
-    exit(EXIT_SUCCESS);
+    int old_sg = s->config->screen_gap;
+
+    clean_config(s);
+
+    parse_config_file(s);
+
+    grab_keys(s);
+
+    int dsg = s->config->screen_gap - old_sg;
+
+    monitor_t *mon_focus = s->monitor_focus;
+    monitor_t *mon = s->monitors;
+    while (mon) {
+        mon->padding.top += dsg;
+        mon->padding.bottom += dsg;
+        mon->padding.left += dsg;
+        mon->padding.right += dsg;
+        s->monitor_focus = mon;
+        make_layout(s);
+        mon = mon->next;
+    }
+
+    s->monitor_focus = mon_focus;
+
+    client_t *cl = s->clients;
+    uint32_t value_mask;
+    uint32_t value_list[1];
+    while (cl) {
+        cl->size_hints.min_width = s->config->min_window_width;
+        cl->size_hints.min_height = s->config->min_window_height;
+
+        if (!cl->fullscreen) {
+            value_mask = XCB_CONFIG_WINDOW_BORDER_WIDTH;
+            value_list[0] = s->config->border_width;
+            xcb_configure_window(s->c, cl->wid, value_mask, value_list);
+        }
+
+        if (s->focus != cl) {
+            value_list[0] = s->config->unfocused_border_color;
+            xcb_change_window_attributes(s->c, cl->wid, XCB_CW_BORDER_PIXEL, value_list);
+        } else {
+            value_list[0] = s->config->focused_border_color;
+            xcb_change_window_attributes(s->c, cl->wid, XCB_CW_BORDER_PIXEL, value_list);
+        }
+
+        cl = cl->next;
+    }
 }

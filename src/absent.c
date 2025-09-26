@@ -15,6 +15,20 @@
 #include "monitors.h"
 #include "types.h"
 
+void grab_keys(state_t *s)
+{
+    xcb_ungrab_key(s->c, XCB_GRAB_ANY, s->root, XCB_MOD_MASK_ANY);
+
+    for (size_t i = 0; i < 256; i++) {
+        xcb_keycode_t *keycode = get_keycode(s, s->config->keybinds[i].key);
+        if (!keycode) {
+            continue;
+        }
+        xcb_grab_key(s->c, 0, s->root, s->config->keybinds[i].mods, *keycode, XCB_GRAB_MODE_ASYNC,
+                     XCB_GRAB_MODE_ASYNC);
+    }
+}
+
 state_t *setup()
 {
     state_t *s = calloc(1, sizeof(state_t));
@@ -51,14 +65,7 @@ state_t *setup()
 
     setup_atoms(s);
 
-    for (size_t i = 0; i < 256; i++) {
-        xcb_keycode_t *keycode = get_keycode(s, s->config->keybinds[i].key);
-        if (!keycode) {
-            continue;
-        }
-        xcb_grab_key(s->c, 0, s->root, s->config->keybinds[i].mods, *keycode, XCB_GRAB_MODE_ASYNC,
-                     XCB_GRAB_MODE_ASYNC);
-    }
+    grab_keys(s);
 
     xcb_cursor_context_t *ctx;
     xcb_cursor_context_new(s->c, s->screen, &ctx);
@@ -159,20 +166,19 @@ void setup_atoms(state_t *s)
     xcb_flush(s->c);
 }
 
-void clean(state_t *s)
+void clean_config(state_t *s)
 {
-    log_msg(s, "Cleaning memory");
-
-    log_close(s);
-
     free(s->config->autostart);
+    s->config->autostart = NULL;
 
     for (int i = 0; i < 8; ++i) {
         if (s->config->desktops[i].monitor_name) {
             free(s->config->desktops[i].monitor_name);
+            s->config->desktops[i].monitor_name = NULL;
             for (int j = 0; j < 10; ++j) {
                 if (s->config->desktops[i].desktop_names[j]) {
                     free(s->config->desktops[i].desktop_names[j]);
+                    s->config->desktops[i].desktop_names[j] = NULL;
                 }
             }
         }
@@ -181,10 +187,21 @@ void clean(state_t *s)
     for (int i = 0; i < 256; ++i) {
         if (s->config->keybinds[i].param) {
             free(s->config->keybinds[i].param);
+            s->config->keybinds[i].param = NULL;
         }
     }
 
     free(s->config);
+    s->config = NULL;
+}
+
+void clean(state_t *s)
+{
+    log_msg(s, "Cleaning memory");
+
+    clean_config(s);
+
+    log_close(s);
 
     free(s->mouse);
     client_t *cl = s->clients;

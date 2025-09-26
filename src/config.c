@@ -204,6 +204,7 @@ static const cbname_cb_t callback_mapping[] = {
     {"destroyclient", destroyclient},
     {"killclient", killclient},
     {"killwm", killwm},
+    {"restartwm", restartwm},
 };
 
 static void parse_variable_err(state_t *s, char *error_field)

@@ -622,28 +622,18 @@ void grab_buttons(state_t *s, client_t *cl)
     if (!s->focus || s->focus != cl) {
         xcb_grab_button(s->c, 0, cl->wid, XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC,
                         XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_ANY, XCB_NONE);
-        xcb_grab_button(s->c, 0, cl->wid,
-                        XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                            XCB_EVENT_MASK_BUTTON_MOTION,
-                        XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, 1,
-                        s->config->button_mod);
-        xcb_grab_button(s->c, 0, cl->wid,
-                        XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                            XCB_EVENT_MASK_BUTTON_MOTION,
-                        XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, 3,
-                        s->config->button_mod);
-    } else {
-        xcb_grab_button(s->c, 0, cl->wid,
-                        XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                            XCB_EVENT_MASK_BUTTON_MOTION,
-                        XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, 1,
-                        s->config->button_mod);
-        xcb_grab_button(s->c, 0, cl->wid,
-                        XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                            XCB_EVENT_MASK_BUTTON_MOTION,
-                        XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, 3,
-                        s->config->button_mod);
     }
+
+    xcb_grab_button(s->c, 0, cl->wid,
+                    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
+                        XCB_EVENT_MASK_BUTTON_MOTION,
+                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE,
+                    s->config->move_button, s->config->button_mod);
+    xcb_grab_button(s->c, 0, cl->wid,
+                    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
+                        XCB_EVENT_MASK_BUTTON_MOTION,
+                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE,
+                    s->config->resize_button, s->config->button_mod);
 }
 
 int client_contains_cursor(state_t *s, client_t *cl)
