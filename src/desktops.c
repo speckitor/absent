@@ -69,6 +69,9 @@ void switch_desktop(state_t *s, const char *name)
         return;
     }
 
+    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
+                        XCB_ATOM_CARDINAL, 32, 1, &desktop_id);
+
     client_unfocus(s);
 
     client_t *cl = s->clients;
@@ -95,8 +98,6 @@ void switch_desktop(state_t *s, const char *name)
     }
 
     mon->desktop_idx = desktop_idx;
-    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
-                        XCB_ATOM_CARDINAL, 32, 1, &desktop_id);
     make_layout(s);
     xcb_flush(s->c);
 }
@@ -124,6 +125,9 @@ void switch_desktop_by_idx(state_t *s, int desktop_id)
         return;
     }
 
+    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
+                        XCB_ATOM_CARDINAL, 32, 1, &desktop_id);
+
     client_unfocus(s);
 
     client_t *cl = s->clients;
@@ -150,8 +154,6 @@ void switch_desktop_by_idx(state_t *s, int desktop_id)
     }
 
     mon->desktop_idx = desktop_idx;
-    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
-                        XCB_ATOM_CARDINAL, 32, 1, &desktop_id);
     make_layout(s);
     xcb_flush(s->c);
 }

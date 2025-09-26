@@ -129,8 +129,7 @@ void cyclefocusup(state_t *s, const char *command)
 
 void setcurrentdesktop(state_t *s, const char *command)
 {
-    if (s->monitor_focus && !s->changing_desktop) {
-        s->changing_desktop = true;
+    if (s->monitor_focus) {
         switch_desktop(s, command);
 
         client_t *cl = s->clients;
@@ -142,7 +141,6 @@ void setcurrentdesktop(state_t *s, const char *command)
             }
             cl = cl->next;
         }
-        s->changing_desktop = false;
     }
 }
 
@@ -318,6 +316,15 @@ void killclient(state_t *s, const char *command)
 }
 
 void killwm(state_t *s, const char *command)
+{
+    (void)command;
+
+    xcb_disconnect(s->c);
+    clean(s);
+    exit(EXIT_SUCCESS);
+}
+
+void restartwm(state_t *s, const char *command)
 {
     (void)command;
 

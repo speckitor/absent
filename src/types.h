@@ -196,7 +196,7 @@ struct state_t {
 
     int number_desktops;
 
-    bool changing_desktop;
-    float lastmotiontime;
+    xcb_timestamp_t lastkeypresstime;
+    xcb_timestamp_t lastmotiontime;
     mouse_t *mouse;
 };

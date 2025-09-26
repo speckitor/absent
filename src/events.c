@@ -63,8 +63,6 @@ void unmap_notify(state_t *s, xcb_generic_event_t *ev)
         s->monitor_focus = cl->monitor;
     }
 
-    xcb_unmap_window(s->c, e->window);
-
     client_t *next = cl == s->focus ? client_kill_next_focus(s) : NULL;
 
     client_remove(s, e->window);
@@ -183,6 +181,14 @@ void key_press(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_key_press_event_t *e = (xcb_key_press_event_t *)ev;
 
+    xcb_timestamp_t current_time = e->time;
+
+    if ((current_time - s->lastkeypresstime) <= 50) {
+        return;
+    }
+
+    s->lastkeypresstime = current_time;
+
     s->monitor_focus = monitor_contains_cursor(s);
 
     int length = sizeof(s->config->keybinds) / sizeof(s->config->keybinds[0]);
@@ -191,11 +197,6 @@ void key_press(state_t *s, xcb_generic_event_t *ev)
             s->config->keybinds[i].callback(s, s->config->keybinds[i].param);
         }
     }
-
-    s->monitor_focus = monitor_contains_cursor(s);
-    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
-                        XCB_ATOM_CARDINAL, 32, 1,
-                        &s->monitor_focus->desktops[s->monitor_focus->desktop_idx].desktop_id);
 }
 
 void button_press(state_t *s, xcb_generic_event_t *ev)
@@ -251,7 +252,7 @@ void motion_notify(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_motion_notify_event_t *e = (xcb_motion_notify_event_t *)ev;
 
-    uint32_t current_time = e->time;
+    xcb_timestamp_t current_time = e->time;
     if ((current_time - s->lastmotiontime) <= s->config->pointer_update_time) {
         return;
     }
