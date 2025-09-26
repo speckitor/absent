@@ -182,10 +182,8 @@ static const modname_mod_t mod_mapping[] = {
 };
 
 static const layoutname_layout_t layout_mapping[] = {
-    {"Tiled", TILED},
-    {"Rtiled", RTILED},
-    {"Horizontal", HORIZONTAL},
-    {"Vertical", VERTICAL},
+    {"Tiled", TILED},     {"Rtiled", RTILED},         {"Vtiled", VTILED},
+    {"Rvtiled", RVTILED}, {"Horizontal", HORIZONTAL}, {"Vertical", VERTICAL},
 };
 
 static const cbname_cb_t callback_mapping[] = {
@@ -198,6 +196,7 @@ static const cbname_cb_t callback_mapping[] = {
     {"setfocustiled", setfocustiled},
     {"setfocusfullscreen", setfocusfullscreen},
     {"movefocusdir", movefocusdir},
+    {"resizemainwindow", resizemainwindow},
     {"swapmainfocus", swapmainfocus},
     {"swapfocusdown", swapfocusdown},
     {"swapfocusup", swapfocusup},

@@ -8,7 +8,7 @@
 
 typedef struct state_t state_t;
 
-typedef void (*keycallback_t)(state_t *s, const char *command);
+typedef void (*keycallback_t)(state_t *s, const char *param);
 
 typedef struct {
     unsigned long key;
@@ -25,6 +25,8 @@ typedef struct {
 typedef enum {
     TILED = 0,
     RTILED,
+    VTILED,
+    RVTILED,
     VERTICAL,
     HORIZONTAL,
     LAYOUTS_NUMBER
@@ -102,6 +104,8 @@ struct monitor_t {
     padding_t padding;
     int x, y;
     int width, height;
+
+    double main_window_area;
 
     monitor_t *next;
 };

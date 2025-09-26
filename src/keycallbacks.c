@@ -11,18 +11,16 @@
 #include "monitors.h"
 
 static const char *layout_names[LAYOUTS_NUMBER] = {
-    [TILED] = "Tiled",
-    [RTILED] = "Rtiled",
-    [VERTICAL] = "Vertical",
-    [HORIZONTAL] = "Horizontal",
+    [TILED] = "Tiled",     [RTILED] = "Rtiled",     [VTILED] = "Vtiled",
+    [RVTILED] = "Rvtiled", [VERTICAL] = "Vertical", [HORIZONTAL] = "Horizontal",
 };
 
-void run(state_t *s, const char *command)
+void run(state_t *s, const char *param)
 {
     (void)s;
 
     if (fork() == 0) {
-        execl("/bin/sh", "sh", "-c", command, (char *)NULL);
+        execl("/bin/sh", "sh", "-c", param, (char *)NULL);
         _exit(EXIT_FAILURE);
     }
 }
@@ -45,9 +43,9 @@ static int count_clients_on_desktop(state_t *s)
     return count;
 }
 
-void cyclefocusdown(state_t *s, const char *command)
+void cyclefocusdown(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     if (s->clients && count_clients_on_desktop(s) > 0) {
         if (s->focus && s->focus->monitor != s->monitor_focus) {
@@ -84,9 +82,9 @@ void cyclefocusdown(state_t *s, const char *command)
     }
 }
 
-void cyclefocusup(state_t *s, const char *command)
+void cyclefocusup(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     if (s->clients) {
         if (s->focus && s->focus->monitor != s->monitor_focus) {
@@ -126,10 +124,10 @@ void cyclefocusup(state_t *s, const char *command)
     }
 }
 
-void setcurrentdesktop(state_t *s, const char *command)
+void setcurrentdesktop(state_t *s, const char *param)
 {
     if (s->monitor_focus) {
-        switch_desktop(s, command);
+        switch_desktop(s, param);
 
         client_t *cl = s->clients;
         while (cl) {
@@ -143,20 +141,20 @@ void setcurrentdesktop(state_t *s, const char *command)
     }
 }
 
-void movefocustodesktop(state_t *s, const char *command)
+void movefocustodesktop(state_t *s, const char *param)
 {
     if (s->focus) {
-        client_move_to_desktop(s, command);
+        client_move_to_desktop(s, param);
     }
 }
 
-void setlayout(state_t *s, const char *command)
+void setlayout(state_t *s, const char *param)
 {
     if (s->monitor_focus) {
         monitor_t *mon = s->monitor_focus;
 
         for (int i = 0; i < LAYOUTS_NUMBER; i++) {
-            if (strcmp(command, layout_names[i]) == 0) {
+            if (strcmp(param, layout_names[i]) == 0) {
                 mon->desktops[mon->desktop_idx].layout = i;
                 make_layout(s);
                 break;
@@ -165,9 +163,9 @@ void setlayout(state_t *s, const char *command)
     }
 }
 
-void setfocustiled(state_t *s, const char *command)
+void setfocustiled(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     if (s->focus && (s->focus->floating || s->focus->fullscreen)) {
         if (s->focus->floating) {
@@ -185,9 +183,9 @@ void setfocustiled(state_t *s, const char *command)
     }
 }
 
-void setfocusfullscreen(state_t *s, const char *command)
+void setfocusfullscreen(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     if (s->focus) {
         int fullscreen = s->focus->fullscreen != true;
@@ -195,21 +193,21 @@ void setfocusfullscreen(state_t *s, const char *command)
     }
 }
 
-void movefocusdir(state_t *s, const char *command)
+void movefocusdir(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     if (s->focus) {
         int dx = 0;
         int dy = 0;
 
-        if (strcmp(command, "Left") == 0) {
+        if (strcmp(param, "Left") == 0) {
             dx = -s->config->move_window_step;
-        } else if (strcmp(command, "Right") == 0) {
+        } else if (strcmp(param, "Right") == 0) {
             dx = s->config->move_window_step;
-        } else if (strcmp(command, "Up") == 0) {
+        } else if (strcmp(param, "Up") == 0) {
             dy = -s->config->move_window_step;
-        } else if (strcmp(command, "Down") == 0) {
+        } else if (strcmp(param, "Down") == 0) {
             dy = s->config->move_window_step;
         }
 
@@ -235,9 +233,28 @@ void movefocusdir(state_t *s, const char *command)
     }
 }
 
-void swapmainfocus(state_t *s, const char *command)
+void resizemainwindow(state_t *s, const char *param)
 {
-    (void)command;
+    if (count_clients_on_desktop(s) > 1) {
+        char sign;
+        double percent;
+        sscanf(param, "%c%lf%", &sign, &percent);
+
+        percent /= 100.0;
+
+        if (sign == '+') {
+            s->monitor_focus->main_window_area += percent;
+        } else if (sign == '-') {
+            s->monitor_focus->main_window_area -= percent;
+        }
+
+        make_layout(s);
+    }
+}
+
+void swapmainfocus(state_t *s, const char *param)
+{
+    (void)param;
 
     if (s->focus && s->focus->monitor == monitor_contains_cursor(s) && !s->focus->floating) {
         client_t *cl = s->clients;
@@ -255,9 +272,9 @@ void swapmainfocus(state_t *s, const char *command)
     }
 }
 
-void swapfocusdown(state_t *s, const char *command)
+void swapfocusdown(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     if (s->clients && s->focus && count_clients_on_desktop(s) > 1) {
         client_t *cl = s->focus->next;
@@ -273,9 +290,9 @@ void swapfocusdown(state_t *s, const char *command)
     }
 }
 
-void swapfocusup(state_t *s, const char *command)
+void swapfocusup(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     if (s->clients && s->focus && count_clients_on_desktop(s) > 1) {
         client_t *prev = NULL;
@@ -295,18 +312,18 @@ void swapfocusup(state_t *s, const char *command)
     }
 }
 
-void destroyclient(state_t *s, const char *command)
+void destroyclient(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     if (s->focus) {
         client_kill(s, s->focus);
     }
 }
 
-void killclient(state_t *s, const char *command)
+void killclient(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     if (s->focus) {
         xcb_kill_client(s->c, s->focus->wid);
@@ -314,18 +331,18 @@ void killclient(state_t *s, const char *command)
     }
 }
 
-void killwm(state_t *s, const char *command)
+void killwm(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     xcb_disconnect(s->c);
     clean(s);
     exit(EXIT_SUCCESS);
 }
 
-void restartwm(state_t *s, const char *command)
+void restartwm(state_t *s, const char *param)
 {
-    (void)command;
+    (void)param;
 
     int old_sg = s->config->screen_gap;
 
@@ -344,8 +361,12 @@ void restartwm(state_t *s, const char *command)
         mon->padding.bottom += dsg;
         mon->padding.left += dsg;
         mon->padding.right += dsg;
+
+        mon->main_window_area = s->config->main_window_area;
+
         s->monitor_focus = mon;
         make_layout(s);
+
         mon = mon->next;
     }
 

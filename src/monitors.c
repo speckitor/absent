@@ -66,6 +66,8 @@ void monitors_setup(state_t *s)
         monitor->width = crtc_reply->width;
         monitor->height = crtc_reply->height;
 
+        monitor->main_window_area = s->config->main_window_area;
+
         monitor->next = s->monitors;
         s->monitors = monitor;
 

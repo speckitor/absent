@@ -2,10 +2,8 @@
 #include "types.h"
 
 static void (*layout_functions[LAYOUTS_NUMBER])(state_t *s, int number) = {
-    [TILED] = tiled,
-    [RTILED] = rtiled,
-    [VERTICAL] = vertical,
-    [HORIZONTAL] = horizontal,
+    [TILED] = tiled,     [RTILED] = rtiled,     [VTILED] = vtiled,
+    [RVTILED] = rvtiled, [VERTICAL] = vertical, [HORIZONTAL] = horizontal,
 };
 
 void make_layout(state_t *s)
@@ -50,25 +48,24 @@ void tiled(state_t *s, int number)
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
-    mw = number > 1 ? (mon->width - pad.left - pad.right) * s->config->main_window_area
+    mw = number > 1 ? (mon->width - pad.left - pad.right) * s->monitor_focus->main_window_area
                     : mon->width - pad.left - pad.right;
     ty = pad.top;
 
-    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
+    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), ++i) {
         if (i < 1) {
             x = mon->x + pad.left;
-            y = mon->y + ty;
+            y = mon->y + pad.top;
             w = mw - bw;
             h = mon->height - bw - pad.top - pad.bottom;
-            client_move_resize(s, cl, x, y, w, h);
         } else {
             x = mon->x + mw + lg + pad.left;
             y = mon->y + ty;
             w = mon->width - mw - bw - lg - pad.left - pad.right;
             h = (mon->height - ty - pad.bottom) / (number - i) - bw;
-            client_move_resize(s, cl, x, y, w, h);
             ty += h + bw + lg;
         }
+        client_move_resize(s, cl, x, y, w, h);
     }
 }
 
@@ -82,25 +79,86 @@ void rtiled(state_t *s, int number)
     monitor_t *mon = s->monitor_focus;
     padding_t pad = mon->padding;
 
-    mw = number > 1 ? (mon->width - pad.left - pad.right) * s->config->main_window_area
+    mw = number > 1 ? (mon->width - pad.left - pad.right) * s->monitor_focus->main_window_area
                     : mon->width - pad.left - pad.right;
     ty = pad.top;
 
-    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
+    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), ++i) {
         if (i < 1) {
             x = mon->x + mon->width - mw - pad.right;
-            y = mon->y + ty;
+            y = mon->y + pad.top;
             w = mw - bw;
             h = mon->height - bw - pad.top - pad.bottom;
-            client_move_resize(s, cl, x, y, w, h);
         } else {
             x = mon->x + pad.left;
             y = mon->y + ty;
             w = mon->width - mw - bw - lg - pad.left - pad.right;
             h = (mon->height - ty - pad.bottom) / (number - i) - bw;
-            client_move_resize(s, cl, x, y, w, h);
             ty += h + bw + lg;
         }
+        client_move_resize(s, cl, x, y, w, h);
+    }
+}
+
+void vtiled(state_t *s, int number)
+{
+    client_t *cl = s->clients;
+    int i, mh, tx, x, y, w, h;
+
+    int bw = 2 * s->config->border_width;
+    int lg = 2 * s->config->layout_gap;
+    monitor_t *mon = s->monitor_focus;
+    padding_t pad = mon->padding;
+
+    mh = number > 1 ? (mon->height - pad.top - pad.bottom) * s->monitor_focus->main_window_area
+                    : mon->height - pad.top - pad.bottom;
+    tx = pad.left;
+
+    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), ++i) {
+        if (i < 1) {
+            x = mon->x + pad.left;
+            y = mon->y + pad.top;
+            w = mon->width - bw - pad.left - pad.right;
+            h = mh - bw;
+        } else {
+            x = mon->x + tx;
+            y = mon->y + mh + lg + pad.top;
+            w = (mon->width - tx - pad.right) / (number - i) - bw;
+            h = mon->height - mh - bw - lg - pad.top - pad.bottom;
+            tx += w + bw + lg;
+        }
+        client_move_resize(s, cl, x, y, w, h);
+    }
+}
+
+void rvtiled(state_t *s, int number)
+{
+    client_t *cl = s->clients;
+    int i, mh, tx, x, y, w, h;
+
+    int bw = 2 * s->config->border_width;
+    int lg = 2 * s->config->layout_gap;
+    monitor_t *mon = s->monitor_focus;
+    padding_t pad = mon->padding;
+
+    mh = number > 1 ? (mon->height - pad.top - pad.bottom) * s->monitor_focus->main_window_area
+                    : mon->height - pad.top - pad.bottom;
+    tx = pad.left;
+
+    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), ++i) {
+        if (i < 1) {
+            x = mon->x + pad.left;
+            y = mon->y + mon->height - mh - pad.bottom;
+            w = mon->width - bw - pad.left - pad.right;
+            h = mh - bw;
+        } else {
+            x = mon->x + tx;
+            y = mon->y + pad.top;
+            w = (mon->width - tx - pad.right) / (number - i) - bw;
+            h = mon->height - mh - bw - lg - pad.top - pad.bottom;
+            tx += w + bw + lg;
+        }
+        client_move_resize(s, cl, x, y, w, h);
     }
 }
 
@@ -118,7 +176,7 @@ void vertical(state_t *s, int number)
     y = mon->y + pad.top;
     h = mon->height - bw - pad.top - pad.bottom;
 
-    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
+    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), ++i) {
         x = mon->x + tx;
         w = (mon->width - tx - pad.right) / (number - i) - bw;
         client_move_resize(s, cl, x, y, w, h);
@@ -140,7 +198,7 @@ void horizontal(state_t *s, int number)
     x = mon->x + pad.left;
     w = mon->width - bw - pad.left - pad.right;
 
-    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), i++) {
+    for (i = 0, cl = next_tiled(s, cl); cl; cl = next_tiled(s, cl->next), ++i) {
         y = mon->y + ty;
         h = (mon->height - ty - pad.bottom) / (number - i) - bw;
         client_move_resize(s, cl, x, y, w, h);
