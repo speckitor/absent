@@ -100,10 +100,9 @@ void cyclefocusup(state_t *s, const char *param)
                 target = prev;
                 break;
             }
-            prev =
-                cl->monitor == s->monitor_focus && cl->desktop_idx == s->monitor_focus->desktop_idx
-                    ? cl
-                    : prev;
+            prev = cl->monitor == s->monitor_focus && cl->desktop_idx == s->monitor_focus->desktop_idx
+                   ? cl
+                   : prev;
             cl = cl->next;
         }
 

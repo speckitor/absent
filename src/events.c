@@ -14,42 +14,24 @@
 #include "monitors.h"
 #include "types.h"
 
-static const event_handler_t handlers[XCB_LAST_EVENT] = {
-    [XCB_MAP_REQUEST] = map_request,
-    [XCB_UNMAP_NOTIFY] = unmap_notify,
-    [XCB_CONFIGURE_REQUEST] = configure_request,
-    [XCB_CLIENT_MESSAGE] = client_message,
-    [XCB_DESTROY_NOTIFY] = destroy_notify,
-    [XCB_KEY_PRESS] = key_press,
-    [XCB_BUTTON_PRESS] = button_press,
-    [XCB_BUTTON_RELEASE] = button_release,
-    [XCB_MOTION_NOTIFY] = motion_notify,
-};
-
-void main_loop(state_t *s)
-{
-    xcb_generic_event_t *event;
-    while (s->c && !xcb_connection_has_error(s->c)) {
-        event = xcb_wait_for_event(s->c);
-
-        uint8_t event_type = event->response_type & ~0x80;
-
-        if (event_type < XCB_LAST_EVENT && handlers[event_type]) {
-            handlers[event_type](s, event);
-        }
-
-        free(event);
-    }
-}
-
-void map_request(state_t *s, xcb_generic_event_t *ev)
+static void map_request(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_map_request_event_t *e = (xcb_map_request_event_t *)ev;
 
     client_create(s, e->window);
 }
 
-void unmap_notify(state_t *s, xcb_generic_event_t *ev)
+static void button_release(state_t *s, xcb_generic_event_t *ev)
+{
+    (void)ev;
+
+    s->mouse->resizingcorner = CORNER_NONE;
+    s->mouse->pressed_button = 0;
+
+    xcb_flush(s->c);
+}
+
+static void unmap_notify(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_unmap_notify_event_t *e = (xcb_unmap_notify_event_t *)ev;
 
@@ -79,12 +61,14 @@ void unmap_notify(state_t *s, xcb_generic_event_t *ev)
 
     if (next) {
         client_focus(s, next);
+    } else {
+        xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
     }
 
     xcb_flush(s->c);
 }
 
-void configure_request(state_t *s, xcb_generic_event_t *ev)
+static void configure_request(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_configure_request_event_t *e = (xcb_configure_request_event_t *)ev;
 
@@ -130,7 +114,7 @@ void configure_request(state_t *s, xcb_generic_event_t *ev)
     xcb_flush(s->c);
 }
 
-void client_message(state_t *s, xcb_generic_event_t *ev)
+static void client_message(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_client_message_event_t *e = (xcb_client_message_event_t *)ev;
 
@@ -161,7 +145,7 @@ void client_message(state_t *s, xcb_generic_event_t *ev)
     xcb_flush(s->c);
 }
 
-void destroy_notify(state_t *s, xcb_generic_event_t *ev)
+static void destroy_notify(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_destroy_notify_event_t *e = (xcb_destroy_notify_event_t *)ev;
 
@@ -172,12 +156,14 @@ void destroy_notify(state_t *s, xcb_generic_event_t *ev)
 
     if (next) {
         client_focus(s, next);
+    } else {
+        xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
     }
 
     button_release(s, NULL);
 }
 
-void key_press(state_t *s, xcb_generic_event_t *ev)
+static void key_press(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_key_press_event_t *e = (xcb_key_press_event_t *)ev;
 
@@ -199,14 +185,14 @@ void key_press(state_t *s, xcb_generic_event_t *ev)
     }
 }
 
-void button_press(state_t *s, xcb_generic_event_t *ev)
+static void button_press(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_button_press_event_t *e = (xcb_button_press_event_t *)ev;
 
     s->monitor_focus = monitor_contains_cursor(s);
     xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
                         XCB_ATOM_CARDINAL, 32, 1,
-                        &s->monitor_focus->desktops[s->monitor_focus->desktop_idx].desktop_id);
+                        &s->monitor_focus->desktop_id);
 
     client_t *cl = client_from_wid(s, e->event);
 
@@ -238,17 +224,7 @@ void button_press(state_t *s, xcb_generic_event_t *ev)
     }
 }
 
-void button_release(state_t *s, xcb_generic_event_t *ev)
-{
-    (void)ev;
-
-    s->mouse->resizingcorner = CORNER_NONE;
-    s->mouse->pressed_button = 0;
-
-    xcb_flush(s->c);
-}
-
-void motion_notify(state_t *s, xcb_generic_event_t *ev)
+static void motion_notify(state_t *s, xcb_generic_event_t *ev)
 {
     xcb_motion_notify_event_t *e = (xcb_motion_notify_event_t *)ev;
 
@@ -307,5 +283,33 @@ void send_event(state_t *s, client_t *cl, xcb_atom_t protocol)
         e.data.data32[0] = protocol;
         e.data.data32[1] = XCB_TIME_CURRENT_TIME;
         xcb_send_event(s->c, 0, cl->wid, XCB_EVENT_MASK_NO_EVENT, (const char *)&e);
+    }
+}
+
+static const event_handler_t handlers[XCB_LAST_EVENT] = {
+    [XCB_MAP_REQUEST] = map_request,
+    [XCB_UNMAP_NOTIFY] = unmap_notify,
+    [XCB_CONFIGURE_REQUEST] = configure_request,
+    [XCB_CLIENT_MESSAGE] = client_message,
+    [XCB_DESTROY_NOTIFY] = destroy_notify,
+    [XCB_KEY_PRESS] = key_press,
+    [XCB_BUTTON_PRESS] = button_press,
+    [XCB_BUTTON_RELEASE] = button_release,
+    [XCB_MOTION_NOTIFY] = motion_notify,
+};
+
+void main_loop(state_t *s)
+{
+    xcb_generic_event_t *event;
+    while (s->c && !xcb_connection_has_error(s->c)) {
+        event = xcb_wait_for_event(s->c);
+
+        uint8_t event_type = event->response_type & ~0x80;
+
+        if (event_type < XCB_LAST_EVENT && handlers[event_type]) {
+            handlers[event_type](s, event);
+        }
+
+        free(event);
     }
 }

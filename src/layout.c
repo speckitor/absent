@@ -1,44 +1,16 @@
 #include "layout.h"
 #include "types.h"
 
-static void (*layout_functions[LAYOUTS_NUMBER])(state_t *s, int number) = {
-    [TILED] = tiled,     [RTILED] = rtiled,     [VTILED] = vtiled,
-    [RVTILED] = rvtiled, [VERTICAL] = vertical, [HORIZONTAL] = horizontal,
-};
-
-void make_layout(state_t *s)
+static client_t *next_tiled(state_t *s, client_t *cl)
 {
-    if (!s->monitor_focus) {
-        return;
-    }
-
-    client_t *cl = s->clients;
-    monitor_t *mon = s->monitor_focus;
-
-    int number = 0;
-
-    while (cl) {
-        if (cl->monitor == mon && cl->desktop_idx == mon->desktop_idx && !cl->floating &&
-            !cl->fullscreen && !cl->hidden) {
-            number++;
-        }
+    while (cl && (cl->floating || cl->fullscreen || s->monitor_focus != cl->monitor ||
+                  s->monitor_focus->desktop_idx != cl->desktop_idx)) {
         cl = cl->next;
     }
-
-    if (number == 0) {
-        return;
-    }
-
-    for (layout_t i = 0; i < LAYOUTS_NUMBER; ++i) {
-        if (mon->desktops[mon->desktop_idx].layout == i) {
-            layout_functions[i](s, number);
-        }
-    }
-
-    xcb_flush(s->c);
+    return cl;
 }
 
-void tiled(state_t *s, int number)
+static void tiled(state_t *s, int number)
 {
     client_t *cl = s->clients;
     int i, mw, ty, x, y, w, h;
@@ -69,7 +41,7 @@ void tiled(state_t *s, int number)
     }
 }
 
-void rtiled(state_t *s, int number)
+static void rtiled(state_t *s, int number)
 {
     client_t *cl = s->clients;
     int i, mw, ty, x, y, w, h;
@@ -100,7 +72,7 @@ void rtiled(state_t *s, int number)
     }
 }
 
-void vtiled(state_t *s, int number)
+static void vtiled(state_t *s, int number)
 {
     client_t *cl = s->clients;
     int i, mh, tx, x, y, w, h;
@@ -131,7 +103,7 @@ void vtiled(state_t *s, int number)
     }
 }
 
-void rvtiled(state_t *s, int number)
+static void rvtiled(state_t *s, int number)
 {
     client_t *cl = s->clients;
     int i, mh, tx, x, y, w, h;
@@ -162,7 +134,7 @@ void rvtiled(state_t *s, int number)
     }
 }
 
-void vertical(state_t *s, int number)
+static void vertical(state_t *s, int number)
 {
     client_t *cl = s->clients;
     int i, tx, x, y, w, h;
@@ -184,7 +156,7 @@ void vertical(state_t *s, int number)
     }
 }
 
-void horizontal(state_t *s, int number)
+static void horizontal(state_t *s, int number)
 {
     client_t *cl = s->clients;
     int i, ty, x, y, w, h;
@@ -206,13 +178,42 @@ void horizontal(state_t *s, int number)
     }
 }
 
-client_t *next_tiled(state_t *s, client_t *cl)
+static void (*layout_functions[LAYOUTS_NUMBER])(state_t *s, int number) = {
+    [TILED] = tiled,     [RTILED] = rtiled,     [VTILED] = vtiled,
+    [RVTILED] = rvtiled, [VERTICAL] = vertical, [HORIZONTAL] = horizontal,
+};
+
+void make_layout(state_t *s)
 {
-    while (cl && (cl->floating || cl->fullscreen || s->monitor_focus != cl->monitor ||
-                  s->monitor_focus->desktop_idx != cl->desktop_idx)) {
+    if (!s->monitor_focus) {
+        return;
+    }
+
+    client_t *cl = s->clients;
+    monitor_t *mon = s->monitor_focus;
+
+    int number = 0;
+
+    while (cl) {
+        if (cl->monitor == mon && !cl->floating &&
+            cl->desktop_idx == mon->desktop_idx &&
+            !cl->fullscreen && !cl->hidden) {
+            number++;
+        }
         cl = cl->next;
     }
-    return cl;
+
+    if (number == 0) {
+        return;
+    }
+
+    for (layout_t i = 0; i < LAYOUTS_NUMBER; ++i) {
+        if (mon->desktops[mon->desktop_idx].layout == i) {
+            layout_functions[i](s, number);
+        }
+    }
+
+    xcb_flush(s->c);
 }
 
 void client_move_resize(state_t *s, client_t *cl, int x, int y, int width, int height)

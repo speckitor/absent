@@ -87,7 +87,7 @@ typedef struct monitor_t monitor_t;
 typedef struct client_t client_t;
 
 typedef struct {
-    int desktop_id;
+    int id;
     char name[16];
     layout_t layout;
 } desktop_t;
@@ -98,6 +98,7 @@ typedef struct {
 
 struct monitor_t {
     desktop_t *desktops;
+    int desktop_id;
     int desktop_idx;
     int number_desktops;
 

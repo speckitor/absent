@@ -97,7 +97,7 @@ void monitors_setup(state_t *s)
                 monitor->number_desktops = number_desktops;
 
                 for (int k = 0; k < number_desktops; k++) {
-                    monitor->desktops[k].desktop_id = s->number_desktops;
+                    monitor->desktops[k].id = s->number_desktops;
                     s->number_desktops++;
                     snprintf(monitor->desktops[k].name, sizeof(monitor->desktops[k].name), "%s",
                              s->config->desktops[j].desktop_names[k]);
@@ -113,7 +113,7 @@ void monitors_setup(state_t *s)
             monitor->number_desktops = number_desktops;
 
             for (int k = 0; k < number_desktops; k++) {
-                monitor->desktops[k].desktop_id = s->number_desktops;
+                monitor->desktops[k].id = s->number_desktops;
                 s->number_desktops++;
                 snprintf(monitor->desktops[k].name, sizeof(monitor->desktops[k].name), "%d", k + 1);
                 monitor->desktops[k].layout = s->config->default_layout;
@@ -121,6 +121,7 @@ void monitors_setup(state_t *s)
         }
 
         monitor->desktop_idx = 0;
+        monitor->desktop_id = monitor->desktops[0].id;
         setup_desktop_names(s, monitor);
 
         free(crtc_reply);

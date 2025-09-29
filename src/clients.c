@@ -10,6 +10,169 @@
 #include "monitors.h"
 #include "types.h"
 
+static void make_dock(state_t *s, xcb_window_t wid)
+{
+    xcb_get_property_cookie_t strut_cookie =
+        xcb_get_property(s->c, 0, wid, s->ewmh[EWMH_STRUT_PARTIAL], XCB_ATOM_CARDINAL, 0, 12);
+    xcb_get_property_reply_t *strut_reply = xcb_get_property_reply(s->c, strut_cookie, NULL);
+
+    if (strut_reply) {
+        uint32_t *strut = (uint32_t *)xcb_get_property_value(strut_reply);
+        if (strut) {
+            int left = strut[0];
+            int right = strut[1];
+            int top = strut[2];
+            int bottom = strut[3];
+
+            int left_start_y = strut[4];
+            int left_end_y = strut[5];
+            int right_start_y = strut[6];
+            int right_end_y = strut[7];
+            int top_start_x = strut[8];
+            int top_end_x = strut[9];
+            int bottom_start_x = strut[10];
+            int bottom_end_x = strut[11];
+
+            for (monitor_t *mon = s->monitors; mon != NULL; mon = mon->next) {
+                bool dock_is_left = (left > mon->x) && (left < mon->x + mon->width - 1) &&
+                                    (left_start_y < mon->y + mon->height) && (left_end_y >= mon->y);
+                if (dock_is_left) {
+                    int dx = left - mon->x;
+
+                    if (mon->padding.left <= 0) {
+                        mon->padding.left += dx;
+                    } else {
+                        mon->padding.left = dx > mon->padding.left ? dx : mon->padding.left;
+                    }
+                }
+
+                bool dock_is_right = (mon->x + mon->width > s->screen->width_in_pixels - right) &&
+                                     (s->screen->width_in_pixels - right > mon->x) &&
+                                     (right_start_y < mon->y + mon->height) &&
+                                     (right_end_y >= mon->y);
+                if (dock_is_right) {
+                    int dx = mon->x + mon->width - s->screen->width_in_pixels + right;
+
+                    if (mon->padding.right <= 0) {
+                        mon->padding.right += dx;
+                    } else {
+                        mon->padding.right = dx > mon->padding.right ? dx : mon->padding.right;
+                    }
+                }
+
+                bool dock_is_top = (mon->y < top) && (top < mon->y + mon->height - 1) &&
+                                   (top_start_x < mon->x + mon->width) && (top_end_x >= mon->x);
+                if (dock_is_top) {
+                    int dy = top - mon->y;
+
+                    if (mon->padding.top <= 0) {
+                        mon->padding.top += dy;
+                    } else {
+                        mon->padding.top = dy > mon->padding.top ? dy : mon->padding.top;
+                    }
+                }
+
+                bool dock_is_bottom =
+                    (mon->y + mon->height > s->screen->height_in_pixels - bottom) &&
+                    (s->screen->height_in_pixels - bottom > mon->y) &&
+                    (bottom_start_x < mon->x + mon->width) && (bottom_end_x >= mon->x);
+                if (dock_is_bottom) {
+                    int dy = mon->y + bottom;
+
+                    if (mon->padding.bottom <= 0) {
+                        mon->padding.bottom += dy;
+                    } else {
+                        mon->padding.bottom = dy > mon->padding.bottom ? dy : mon->padding.bottom;
+                    }
+                }
+            }
+        }
+    }
+
+    free(strut_reply);
+
+    xcb_map_window(s->c, wid);
+
+    make_layout(s);
+}
+
+static void client_set_size_hints(state_t *s, client_t *cl)
+{
+    xcb_size_hints_t size_hints;
+
+    xcb_get_property_cookie_t cookie = xcb_icccm_get_wm_normal_hints(s->c, cl->wid);
+
+    if (xcb_icccm_get_wm_normal_hints_reply(s->c, cookie, &size_hints, NULL)) {
+        if (size_hints.flags & XCB_ICCCM_SIZE_HINT_P_MIN_SIZE) {
+            cl->size_hints.min_width = size_hints.min_width;
+            cl->size_hints.min_height = size_hints.min_height;
+        } else {
+            cl->size_hints.min_width = s->config->min_window_width;
+            cl->size_hints.min_height = s->config->min_window_height;
+        }
+
+        if (size_hints.flags & XCB_ICCCM_SIZE_HINT_P_MAX_SIZE) {
+            cl->size_hints.max_width = size_hints.max_width;
+            cl->size_hints.max_height = size_hints.max_height;
+        } else {
+            cl->size_hints.max_width = 10000;
+            cl->size_hints.max_height = 10000;
+        }
+    } else {
+        cl->size_hints.min_width = s->config->min_window_width;
+        cl->size_hints.min_height = s->config->min_window_height;
+        cl->size_hints.max_width = 10000;
+        cl->size_hints.max_height = 10000;
+    }
+}
+
+static void grab_buttons(state_t *s, client_t *cl)
+{
+    if (!cl) {
+        return;
+    }
+
+    xcb_ungrab_button(s->c, XCB_BUTTON_INDEX_ANY, cl->wid, XCB_MOD_MASK_ANY);
+
+    if (!s->focus || s->focus != cl) {
+        xcb_grab_button(s->c, 0, cl->wid, XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC,
+                        XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_ANY, XCB_NONE);
+    }
+
+    xcb_grab_button(s->c, 0, cl->wid,
+                    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
+                        XCB_EVENT_MASK_BUTTON_MOTION,
+                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE,
+                    s->config->move_button, s->config->button_mod);
+    xcb_grab_button(s->c, 0, cl->wid,
+                    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
+                        XCB_EVENT_MASK_BUTTON_MOTION,
+                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE,
+                    s->config->resize_button, s->config->button_mod);
+}
+
+static void client_configure(state_t *s, client_t *cl)
+{
+    if (!cl) {
+        return;
+    }
+
+    xcb_configure_notify_event_t e;
+
+    e.response_type = XCB_CONFIGURE_NOTIFY;
+    e.event = cl->wid;
+    e.window = cl->wid;
+    e.x = cl->x;
+    e.y = cl->y;
+    e.width = cl->width;
+    e.height = cl->height;
+    e.border_width = s->config->border_width;
+    e.above_sibling = XCB_NONE;
+    e.override_redirect = 0;
+
+    xcb_send_event(s->c, 0, cl->wid, XCB_EVENT_MASK_STRUCTURE_NOTIFY, (const char *)&e);
+}
+
 void client_create(state_t *s, xcb_window_t wid)
 {
     s->monitor_focus = monitor_contains_cursor(s);
@@ -169,122 +332,6 @@ void client_create(state_t *s, xcb_window_t wid)
     xcb_flush(s->c);
 }
 
-void make_dock(state_t *s, xcb_window_t wid)
-{
-    xcb_get_property_cookie_t strut_cookie =
-        xcb_get_property(s->c, 0, wid, s->ewmh[EWMH_STRUT_PARTIAL], XCB_ATOM_CARDINAL, 0, 12);
-    xcb_get_property_reply_t *strut_reply = xcb_get_property_reply(s->c, strut_cookie, NULL);
-
-    if (strut_reply) {
-        uint32_t *strut = (uint32_t *)xcb_get_property_value(strut_reply);
-        if (strut) {
-            int left = strut[0];
-            int right = strut[1];
-            int top = strut[2];
-            int bottom = strut[3];
-
-            int left_start_y = strut[4];
-            int left_end_y = strut[5];
-            int right_start_y = strut[6];
-            int right_end_y = strut[7];
-            int top_start_x = strut[8];
-            int top_end_x = strut[9];
-            int bottom_start_x = strut[10];
-            int bottom_end_x = strut[11];
-
-            for (monitor_t *mon = s->monitors; mon != NULL; mon = mon->next) {
-                bool dock_is_left = (left > mon->x) && (left < mon->x + mon->width - 1) &&
-                                    (left_start_y < mon->y + mon->height) && (left_end_y >= mon->y);
-                if (dock_is_left) {
-                    int dx = left - mon->x;
-
-                    if (mon->padding.left <= 0) {
-                        mon->padding.left += dx;
-                    } else {
-                        mon->padding.left = dx > mon->padding.left ? dx : mon->padding.left;
-                    }
-                }
-
-                bool dock_is_right = (mon->x + mon->width > s->screen->width_in_pixels - right) &&
-                                     (s->screen->width_in_pixels - right > mon->x) &&
-                                     (right_start_y < mon->y + mon->height) &&
-                                     (right_end_y >= mon->y);
-                if (dock_is_right) {
-                    int dx = mon->x + mon->width - s->screen->width_in_pixels + right;
-
-                    if (mon->padding.right <= 0) {
-                        mon->padding.right += dx;
-                    } else {
-                        mon->padding.right = dx > mon->padding.right ? dx : mon->padding.right;
-                    }
-                }
-
-                bool dock_is_top = (mon->y < top) && (top < mon->y + mon->height - 1) &&
-                                   (top_start_x < mon->x + mon->width) && (top_end_x >= mon->x);
-                if (dock_is_top) {
-                    int dy = top - mon->y;
-
-                    if (mon->padding.top <= 0) {
-                        mon->padding.top += dy;
-                    } else {
-                        mon->padding.top = dy > mon->padding.top ? dy : mon->padding.top;
-                    }
-                }
-
-                bool dock_is_bottom =
-                    (mon->y + mon->height > s->screen->height_in_pixels - bottom) &&
-                    (s->screen->height_in_pixels - bottom > mon->y) &&
-                    (bottom_start_x < mon->x + mon->width) && (bottom_end_x >= mon->x);
-                if (dock_is_bottom) {
-                    int dy = mon->y + bottom;
-
-                    if (mon->padding.bottom <= 0) {
-                        mon->padding.bottom += dy;
-                    } else {
-                        mon->padding.bottom = dy > mon->padding.bottom ? dy : mon->padding.bottom;
-                    }
-                }
-            }
-        }
-    }
-
-    free(strut_reply);
-
-    xcb_map_window(s->c, wid);
-
-    make_layout(s);
-}
-
-void client_set_size_hints(state_t *s, client_t *cl)
-{
-    xcb_size_hints_t size_hints;
-
-    xcb_get_property_cookie_t cookie = xcb_icccm_get_wm_normal_hints(s->c, cl->wid);
-
-    if (xcb_icccm_get_wm_normal_hints_reply(s->c, cookie, &size_hints, NULL)) {
-        if (size_hints.flags & XCB_ICCCM_SIZE_HINT_P_MIN_SIZE) {
-            cl->size_hints.min_width = size_hints.min_width;
-            cl->size_hints.min_height = size_hints.min_height;
-        } else {
-            cl->size_hints.min_width = s->config->min_window_width;
-            cl->size_hints.min_height = s->config->min_window_height;
-        }
-
-        if (size_hints.flags & XCB_ICCCM_SIZE_HINT_P_MAX_SIZE) {
-            cl->size_hints.max_width = size_hints.max_width;
-            cl->size_hints.max_height = size_hints.max_height;
-        } else {
-            cl->size_hints.max_width = 10000;
-            cl->size_hints.max_height = 10000;
-        }
-    } else {
-        cl->size_hints.min_width = s->config->min_window_width;
-        cl->size_hints.min_height = s->config->min_window_height;
-        cl->size_hints.max_width = 10000;
-        cl->size_hints.max_height = 10000;
-    }
-}
-
 client_t *client_kill_next_focus(state_t *s)
 {
     if (s->focus) {
@@ -298,7 +345,8 @@ client_t *client_kill_next_focus(state_t *s)
             next = NULL;
             client_t *tmp = s->clients;
             while (tmp != s->focus) {
-                if (!tmp->floating && !tmp->fullscreen && tmp->monitor == s->focus->monitor &&
+                if (!tmp->floating && !tmp->fullscreen &&
+                    tmp->monitor == s->focus->monitor &&
                     tmp->desktop_idx == s->focus->desktop_idx) {
                     next = tmp;
                 }
@@ -537,28 +585,6 @@ void client_fullscreen(state_t *s, client_t *cl, bool fullscreen)
     client_configure(s, cl);
 }
 
-void client_configure(state_t *s, client_t *cl)
-{
-    if (!cl) {
-        return;
-    }
-
-    xcb_configure_notify_event_t e;
-
-    e.response_type = XCB_CONFIGURE_NOTIFY;
-    e.event = cl->wid;
-    e.window = cl->wid;
-    e.x = cl->x;
-    e.y = cl->y;
-    e.width = cl->width;
-    e.height = cl->height;
-    e.border_width = s->config->border_width;
-    e.above_sibling = XCB_NONE;
-    e.override_redirect = 0;
-
-    xcb_send_event(s->c, 0, cl->wid, XCB_EVENT_MASK_STRUCTURE_NOTIFY, (const char *)&e);
-}
-
 void client_unfocus(state_t *s)
 {
     if (!s->focus) {
@@ -609,31 +635,6 @@ void client_focus(state_t *s, client_t *cl)
     grab_buttons(s, s->focus);
 
     xcb_flush(s->c);
-}
-
-void grab_buttons(state_t *s, client_t *cl)
-{
-    if (!cl) {
-        return;
-    }
-
-    xcb_ungrab_button(s->c, XCB_BUTTON_INDEX_ANY, cl->wid, XCB_MOD_MASK_ANY);
-
-    if (!s->focus || s->focus != cl) {
-        xcb_grab_button(s->c, 0, cl->wid, XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC,
-                        XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_ANY, XCB_NONE);
-    }
-
-    xcb_grab_button(s->c, 0, cl->wid,
-                    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                        XCB_EVENT_MASK_BUTTON_MOTION,
-                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE,
-                    s->config->move_button, s->config->button_mod);
-    xcb_grab_button(s->c, 0, cl->wid,
-                    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                        XCB_EVENT_MASK_BUTTON_MOTION,
-                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE,
-                    s->config->resize_button, s->config->button_mod);
 }
 
 int client_contains_cursor(state_t *s, client_t *cl)

@@ -24,8 +24,8 @@ void grab_keys(state_t *s)
         if (!keycode) {
             continue;
         }
-        xcb_grab_key(s->c, 0, s->root, s->config->keybinds[i].mods, *keycode, XCB_GRAB_MODE_ASYNC,
-                     XCB_GRAB_MODE_ASYNC);
+        xcb_grab_key(s->c, 0, s->root, s->config->keybinds[i].mods,
+                     *keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
     }
 }
 
@@ -40,7 +40,7 @@ state_t *setup()
     parse_config_file(s);
 
     s->c = xcb_connect(NULL, NULL);
-
+    
     if (xcb_connection_has_error(s->c)) {
         exit(EXIT_FAILURE);
     }
@@ -97,9 +97,8 @@ state_t *setup()
     monitors_setup(s);
     s->monitor_focus = monitor_contains_cursor(s);
 
-    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],
-                        XCB_ATOM_CARDINAL, 32, 1,
-                        &s->monitor_focus->desktops[s->monitor_focus->desktop_idx].desktop_id);
+    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],XCB_ATOM_CARDINAL, 32, 1,
+                        &s->monitor_focus->desktop_id);
 
     xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_NUMBER_OF_DESKTOPS],
                         XCB_ATOM_CARDINAL, 32, 1, &s->number_desktops);
@@ -138,6 +137,7 @@ void setup_atoms(state_t *s)
     s->ewmh[EWMH_WINDOW_TYPE_UTILITY] = get_atom(s, "_NET_WM_WINDOW_TYPE_UTILITY");
     s->ewmh[EWMH_WINDOW_TYPE_SPLASH] = get_atom(s, "_NET_WM_WINDOW_TYPE_SPLASH");
     s->ewmh[EWMH_WINDOW_TYPE_MENU] = get_atom(s, "_NET_WM_WINDOW_TYPE_MENU");
+
     s->ewmh[EWMH_WINDOW_TYPE_TOOLBAR] = get_atom(s, "_NET_WM_WINDOW_TYPE_TOOLBAR");
     s->ewmh[EWMH_WINDOW_TYPE_NORMAL] = get_atom(s, "_NET_WM_WINDOW_TYPE_NORMAL");
     s->ewmh[EWMH_WINDOW_TYPE_DIALOG] = get_atom(s, "_NET_WM_WINDOW_TYPE_DIALOG");

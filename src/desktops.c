@@ -31,6 +31,18 @@ void setup_desktop_names(state_t *s, monitor_t *mon)
     free(names);
 }
 
+static void hide_client(state_t *s, client_t *cl)
+{
+    cl->hidden = true;
+    xcb_unmap_window(s->c, cl->wid);
+}
+
+static void show_client(state_t *s, client_t *cl)
+{
+    cl->hidden = false;
+    xcb_map_window(s->c, cl->wid);
+}
+
 void switch_desktop(state_t *s, const char *name)
 {
     monitor_t *mon = s->monitor_focus;
@@ -39,7 +51,7 @@ void switch_desktop(state_t *s, const char *name)
     for (int i = 0; i < mon->number_desktops; i++) {
         if (strcmp(mon->desktops[i].name, name) == 0 && mon->desktop_idx != i) {
             desktop_idx = i;
-            desktop_id = mon->desktops[i].desktop_id;
+            desktop_id = mon->desktops[i].id;
             break;
         }
     }
@@ -54,7 +66,7 @@ void switch_desktop(state_t *s, const char *name)
             for (int i = 0; i < mon->number_desktops; i++) {
                 if (strcmp(mon->desktops[i].name, name) == 0) {
                     desktop_idx = i;
-                    desktop_id = mon->desktops[i].desktop_id;
+                    desktop_id = mon->desktops[i].id;
                     break;
                 }
             }
@@ -98,6 +110,7 @@ void switch_desktop(state_t *s, const char *name)
     }
 
     mon->desktop_idx = desktop_idx;
+    mon->desktop_id = desktop_id;
     make_layout(s);
     xcb_flush(s->c);
 }
@@ -109,7 +122,7 @@ void switch_desktop_by_idx(state_t *s, int desktop_id)
 
     while (mon) {
         for (int i = 0; i < mon->number_desktops; i++) {
-            if (mon->desktops[i].desktop_id == desktop_id) {
+            if (mon->desktops[i].id == desktop_id) {
                 desktop_idx = i;
                 break;
             }
@@ -154,6 +167,7 @@ void switch_desktop_by_idx(state_t *s, int desktop_id)
     }
 
     mon->desktop_idx = desktop_idx;
+    mon->desktop_id = desktop_id;
     make_layout(s);
     xcb_flush(s->c);
 }
@@ -166,7 +180,7 @@ void client_move_to_desktop(state_t *s, const char *name)
     for (int i = 0; i < mon->number_desktops; i++) {
         if (strcmp(mon->desktops[i].name, name) == 0 && mon->desktop_idx != i) {
             desktop_idx = i;
-            desktop_id = mon->desktops[i].desktop_id;
+            desktop_id = mon->desktops[i].id;
             break;
         }
     }
@@ -181,7 +195,7 @@ void client_move_to_desktop(state_t *s, const char *name)
             for (int i = 0; i < mon->number_desktops; i++) {
                 if (strcmp(mon->desktops[i].name, name) == 0) {
                     desktop_idx = i;
-                    desktop_id = mon->desktops[i].desktop_id;
+                    desktop_id = mon->desktops[i].id;
                     break;
                 }
             }
@@ -224,16 +238,4 @@ void client_move_to_desktop(state_t *s, const char *name)
     client_unfocus(s);
 
     xcb_flush(s->c);
-}
-
-void hide_client(state_t *s, client_t *cl)
-{
-    cl->hidden = true;
-    xcb_unmap_window(s->c, cl->wid);
-}
-
-void show_client(state_t *s, client_t *cl)
-{
-    cl->hidden = false;
-    xcb_map_window(s->c, cl->wid);
 }
