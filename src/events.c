@@ -61,8 +61,6 @@ static void unmap_notify(state_t *s, xcb_generic_event_t *ev)
 
     if (next) {
         client_focus(s, next);
-    } else {
-        xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
     }
 
     xcb_flush(s->c);
@@ -156,8 +154,6 @@ static void destroy_notify(state_t *s, xcb_generic_event_t *ev)
 
     if (next) {
         client_focus(s, next);
-    } else {
-        xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
     }
 
     button_release(s, NULL);
