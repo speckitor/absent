@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra
+CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra -I./include/
 LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr -lconfig
-SRC_FILES = ./src/*.c
+SRC_FILES = ./src/*
 
 CFG_FILES = ./config
 BIN_DIR = /usr/local/bin
@@ -9,7 +9,7 @@ BINARY = absent
 DESKTOP = $(BINARY).desktop
 DESKTOP_DIR = /usr/share/xsessions
 CFG = $(BINARY).cfg
-GLOBAL_CFG_DIR = /etc/absent
+CFG_DIR = /etc/absent
 
 all: compile
 
