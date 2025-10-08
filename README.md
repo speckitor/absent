@@ -1,43 +1,38 @@
 # absent
-Simple and flexible X tiling window manager
+A simple X tiling window manager
 
-[Video example](https://youtu.be/6glkO97ToIY)
+## Description
+
+The main motivation behind creating **absent** was the lack of dynamic window managers that efficiently handle multiple monitors while remaining easy to configure. This project aims to provide a window manager that is:
+
+- **Dynamic**
+- **Simple to configure**
+- **Efficient with multiple monitors** 
+- **Lightweight and performant**  
 
 # Installation
 
 Dependencies
 
 ```console
-gcc, make, xcb, xcb-util, xcb-proto, xcb-util-keysyms, xcb-util-cursor, xcb-util-wm (xcb-util-icccm), xkbcommon, xcb-cursors, xcb-randr
+gcc, make, libconfig, xcb, xcb-util, xcb-proto, xcb-util-keysyms, xcb-util-cursor, xcb-util-wm (xcb-util-icccm), xkbcommon, xcb-cursors, xcb-randr
 ```
 
 Install window manager
 
-- clone the repository 
+- clone this repo and run
 
 ```console
-git clone https://github.com/speckitor/absent
+sudo make install
 ```
 
-- compile wm with make
-
-```console
-make
-```
-
-- copy `absent`, `autostartabsent` and `absent.desktop` files to `/usr/local/bin` and `/usr/share/xsessions/`
-
-```console
-sudo make copy
-```
-
-Removing window manager
+Uninstalling window manager
 
 - to remove all binaries and session file run
 
 ```console
-sudo make clean
+sudo make uninstall
 ```
 
 # Configuration
-The `config.h` file contains all configuration. The `autostartabsent` file contains commands that are executed when the window manager starts (can be disabled in `config.h` or modified). After editing these files you need to recompile wm.
+Default configguration file is `/etc/absent/absent.cfg`, you can copy and modify it in `~/.config/absent/absent.cfg`. If there is an error in your configuration file absent will automaticly parce default configuration instead of yours and print error logs in `/tmp/absent.log`.
