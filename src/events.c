@@ -300,6 +300,11 @@ void main_loop(state_t *s)
     while (s->c && !xcb_connection_has_error(s->c)) {
         event = xcb_wait_for_event(s->c);
 
+        if (!event) {
+            log_msg("XCB connection lost or failed\n");
+            break;
+        }
+
         uint8_t event_type = event->response_type & ~0x80;
 
         if (event_type < XCB_LAST_EVENT && handlers[event_type]) {
