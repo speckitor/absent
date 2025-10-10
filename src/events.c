@@ -13,6 +13,7 @@
 #include "layout.h"
 #include "monitors.h"
 #include "types.h"
+#include "logs.h"
 
 static void map_request(state_t *s, xcb_generic_event_t *ev)
 {
@@ -301,7 +302,7 @@ void main_loop(state_t *s)
         event = xcb_wait_for_event(s->c);
 
         if (!event) {
-            log_msg("XCB connection lost or failed\n");
+            log_msg(s, "XCB connection lost or failed\n");
             break;
         }
 
