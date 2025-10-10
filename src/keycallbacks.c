@@ -317,6 +317,10 @@ void destroyclient(state_t *s, const char *param)
 
     if (s->focus) {
         client_kill(s, s->focus);
+
+        xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
+
+        xcb_flush(s->c);
     }
 }
 
@@ -326,6 +330,9 @@ void killclient(state_t *s, const char *param)
 
     if (s->focus) {
         xcb_kill_client(s->c, s->focus->wid);
+
+        xcb_set_input_focus(s->c, XCB_INPUT_FOCUS_POINTER_ROOT, s->root, XCB_CURRENT_TIME);
+
         xcb_flush(s->c);
     }
 }
