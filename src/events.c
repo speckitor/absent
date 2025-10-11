@@ -136,7 +136,7 @@ static void client_message(state_t *s, xcb_generic_event_t *ev)
             }
         }
     } else if (e->type == s->ewmh[EWMH_ACTIVE_WINDOW]) {
-        if (s->focus != cl) {
+        if (s->focus != cl && !cl->hidden && cl->floating) {
             client_focus(s, cl);
         }
     }
@@ -206,7 +206,9 @@ static void button_press(state_t *s, xcb_generic_event_t *ev)
         xcb_flush(s->c);
     }
 
-    if (e->state & s->config->button_mod) {
+    optional_modifiers_t m = s->opt_mods;
+
+    if ((e->state & ~(m.num_lock | m.caps_lock | m.scroll_lock)) == s->config->button_mod) {
         cl->floating = true;
         make_layout(s);
         s->mouse->pressed_button = e->detail;

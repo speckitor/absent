@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <X11/keysym.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_cursor.h>
 #include <xcb/xproto.h>
@@ -15,17 +16,49 @@
 #include "monitors.h"
 #include "types.h"
 
+#define GRAB_KEY(k, m) \
+        xcb_grab_key(s->c, 0, s->root, (m), \
+                     *(k), XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+
+void grab_key(state_t *s, size_t i)
+{
+    xcb_keycode_t *keycode = get_keycode(s, s->config->keybinds[i].key);
+    if (!keycode) {
+        return;
+    }
+    uint16_t mod = s->config->keybinds[i].mods;
+    optional_modifiers_t m = s->opt_mods;
+
+    if (m.num_lock != XCB_NO_SYMBOL && m.caps_lock != XCB_NO_SYMBOL && m.scroll_lock != XCB_NO_SYMBOL) {
+        GRAB_KEY(keycode, mod | m.num_lock | m.caps_lock | m.scroll_lock);
+    }
+    if (m.num_lock != XCB_NO_SYMBOL && m.caps_lock != XCB_NO_SYMBOL) {
+        GRAB_KEY(keycode, mod | m.num_lock | m.caps_lock);
+    }
+    if (m.caps_lock != XCB_NO_SYMBOL && m.scroll_lock != XCB_NO_SYMBOL) {
+        GRAB_KEY(keycode, mod | m.caps_lock | m.scroll_lock);
+    }
+    if (m.num_lock != XCB_NO_SYMBOL && m.scroll_lock != XCB_NO_SYMBOL) {
+        GRAB_KEY(keycode, mod | m.num_lock | m.scroll_lock);
+    }
+    if (m.num_lock != XCB_NO_SYMBOL) {
+        GRAB_KEY(keycode, mod | m.num_lock);
+    }
+    if (m.caps_lock != XCB_NO_SYMBOL) {
+        GRAB_KEY(keycode, mod | m.caps_lock);
+    }
+    if (m.scroll_lock != XCB_NO_SYMBOL) {
+        GRAB_KEY(keycode, mod | m.scroll_lock);
+    }
+    GRAB_KEY(keycode, mod);
+}
+
 void grab_keys(state_t *s)
 {
     xcb_ungrab_key(s->c, XCB_GRAB_ANY, s->root, XCB_MOD_MASK_ANY);
 
     for (size_t i = 0; i < 256; i++) {
-        xcb_keycode_t *keycode = get_keycode(s, s->config->keybinds[i].key);
-        if (!keycode) {
-            continue;
-        }
-        xcb_grab_key(s->c, 0, s->root, s->config->keybinds[i].mods,
-                     *keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+        grab_key(s, i);
     }
 }
 
@@ -62,6 +95,14 @@ state_t *setup()
     s->mouse->root_x = 0;
     s->mouse->root_y = 0;
     s->mouse->resizingcorner = CORNER_NONE;
+
+    s->opt_mods.num_lock = get_modifier_from_keysym(s, XK_Num_Lock);
+    s->opt_mods.caps_lock = get_modifier_from_keysym(s, XK_Caps_Lock);
+    s->opt_mods.scroll_lock = get_modifier_from_keysym(s, XK_Scroll_Lock);
+
+    if (s->opt_mods.caps_lock == XCB_NO_SYMBOL) {
+        s->opt_mods.caps_lock = XCB_MOD_MASK_LOCK;
+    }
 
     setup_atoms(s);
 

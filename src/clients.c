@@ -126,6 +126,38 @@ static void client_set_size_hints(state_t *s, client_t *cl)
     }
 }
 
+#define GRAB_BUTTON(event_mask, pointer_mode, button, mod) \
+        xcb_grab_button(s->c, 0, cl->wid, (event_mask), (pointer_mode), \
+                        XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, (button), (mod));
+
+static void grab_button(state_t *s, client_t *cl, uint16_t event_mask, uint8_t pointer_mode, uint8_t button, uint16_t mod)
+{
+    optional_modifiers_t m = s->opt_mods;
+
+    if (m.num_lock != XCB_NO_SYMBOL && m.caps_lock != XCB_NO_SYMBOL && m.scroll_lock != XCB_NO_SYMBOL) {
+        GRAB_BUTTON(event_mask, pointer_mode, button, mod | m.num_lock | m.caps_lock | m.scroll_lock);
+    }
+    if (m.num_lock != XCB_NO_SYMBOL && m.caps_lock != XCB_NO_SYMBOL) {
+        GRAB_BUTTON(event_mask, pointer_mode, button, mod | m.num_lock | m.caps_lock);
+    }
+    if (m.caps_lock != XCB_NO_SYMBOL && m.scroll_lock != XCB_NO_SYMBOL) {
+        GRAB_BUTTON(event_mask, pointer_mode, button, mod | m.caps_lock | m.scroll_lock);
+    }
+    if (m.num_lock != XCB_NO_SYMBOL && m.scroll_lock != XCB_NO_SYMBOL) {
+        GRAB_BUTTON(event_mask, pointer_mode, button, mod | m.num_lock | m.scroll_lock);
+    }
+    if (m.num_lock != XCB_NO_SYMBOL) {
+        GRAB_BUTTON(event_mask, pointer_mode, button, mod | m.num_lock);
+    }
+    if (m.caps_lock != XCB_NO_SYMBOL) {
+        GRAB_BUTTON(event_mask, pointer_mode, button, mod | m.caps_lock);
+    }
+    if (m.scroll_lock != XCB_NO_SYMBOL) {
+        GRAB_BUTTON(event_mask, pointer_mode, button, mod | m.scroll_lock);
+    }
+    GRAB_BUTTON(event_mask, pointer_mode, button, mod);
+}
+
 static void grab_buttons(state_t *s, client_t *cl)
 {
     if (!cl) {
@@ -135,20 +167,13 @@ static void grab_buttons(state_t *s, client_t *cl)
     xcb_ungrab_button(s->c, XCB_BUTTON_INDEX_ANY, cl->wid, XCB_MOD_MASK_ANY);
 
     if (!s->focus || s->focus != cl) {
-        xcb_grab_button(s->c, 0, cl->wid, XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC,
-                        XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_ANY, XCB_NONE);
+        grab_button(s, cl, XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_BUTTON_INDEX_ANY, XCB_NONE);
     }
 
-    xcb_grab_button(s->c, 0, cl->wid,
-                    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                        XCB_EVENT_MASK_BUTTON_MOTION,
-                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE,
-                    s->config->move_button, s->config->button_mod);
-    xcb_grab_button(s->c, 0, cl->wid,
-                    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                        XCB_EVENT_MASK_BUTTON_MOTION,
-                    XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE, XCB_NONE,
-                    s->config->resize_button, s->config->button_mod);
+    grab_button(s, cl, XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION,
+                XCB_GRAB_MODE_ASYNC, s->config->move_button, s->config->button_mod);
+    grab_button(s, cl, XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION,
+                XCB_GRAB_MODE_ASYNC, s->config->resize_button, s->config->button_mod);
 }
 
 static void client_configure(state_t *s, client_t *cl)
@@ -407,6 +432,10 @@ void client_remove(state_t *s, xcb_window_t wid)
 
     while (clients) {
         if (clients->wid == wid) {
+            if (clients == s->focus) {
+                client_unfocus(s);
+            }
+
             *prev = clients->next;
             free(clients);
             return;

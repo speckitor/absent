@@ -150,6 +150,12 @@ typedef struct {
     corner_t resizingcorner;
 } mouse_t;
 
+typedef struct {
+    uint16_t num_lock;
+    uint16_t caps_lock;
+    uint16_t scroll_lock;
+} optional_modifiers_t;
+
 typedef enum {
     ICCCM_PROTOCOLS = 0,
     ICCCM_DELETE_WINDOW,
@@ -204,4 +210,6 @@ struct state_t {
     xcb_timestamp_t lastkeypresstime;
     xcb_timestamp_t lastmotiontime;
     mouse_t *mouse;
+
+    optional_modifiers_t opt_mods;
 };
