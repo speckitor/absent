@@ -192,46 +192,6 @@ void setfocusfullscreen(state_t *s, const char *param)
     }
 }
 
-void movefocusdir(state_t *s, const char *param)
-{
-    (void)param;
-
-    if (s->focus) {
-        int dx = 0;
-        int dy = 0;
-
-        if (strcmp(param, "Left") == 0) {
-            dx = -s->config->move_window_step;
-        } else if (strcmp(param, "Right") == 0) {
-            dx = s->config->move_window_step;
-        } else if (strcmp(param, "Up") == 0) {
-            dy = -s->config->move_window_step;
-        } else if (strcmp(param, "Down") == 0) {
-            dy = s->config->move_window_step;
-        }
-
-        uint32_t value_list[1] = {XCB_STACK_MODE_ABOVE};
-        xcb_configure_window(s->c, s->focus->wid, XCB_CONFIG_WINDOW_STACK_MODE, value_list);
-
-        if (s->focus->fullscreen) {
-            s->focus->fullscreen = false;
-            xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->focus->wid,
-                                s->ewmh[EWMH_FULLSCREEN], XCB_ATOM_ATOM, 32, 0, 0);
-
-            uint32_t value_mask = XCB_CONFIG_WINDOW_BORDER_WIDTH;
-            uint32_t value_list[] = {s->config->border_width};
-            xcb_configure_window(s->c, s->focus->wid, value_mask, value_list);
-        }
-
-        xcb_flush(s->c);
-
-        s->focus->floating = true;
-        client_move(s, s->focus, s->focus->x + dx, s->focus->y + dy);
-
-        make_layout(s);
-    }
-}
-
 void resizemainwindow(state_t *s, const char *param)
 {
     if (count_clients_on_desktop(s) > 1) {

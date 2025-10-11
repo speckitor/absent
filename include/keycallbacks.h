@@ -18,8 +18,6 @@ void setlayout(state_t *s, const char *param);
 void setfocustiled(state_t *s, const char *param);
 void setfocusfullscreen(state_t *s, const char *param);
 
-void movefocusdir(state_t *s, const char *param);
-
 void resizemainwindow(state_t *s, const char *param);
 void swapmainfocus(state_t *s, const char *param);
 void swapfocusdown(state_t *s, const char *param);

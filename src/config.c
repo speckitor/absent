@@ -195,7 +195,6 @@ static const cbname_cb_t callback_mapping[] = {
     {"setlayout", setlayout},
     {"setfocustiled", setfocustiled},
     {"setfocusfullscreen", setfocusfullscreen},
-    {"movefocusdir", movefocusdir},
     {"resizemainwindow", resizemainwindow},
     {"swapmainfocus", swapmainfocus},
     {"swapfocusdown", swapfocusdown},
