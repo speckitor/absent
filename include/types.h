@@ -72,7 +72,6 @@ typedef struct {
     int focused_border_color;
     int unfocused_border_color;
 
-    int move_window_step;
     uint16_t button_mod;
     int move_button;
     int resize_button;
