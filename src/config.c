@@ -232,7 +232,7 @@ static void parse_config_bool(state_t *s, config_t *cfg, char *name, int *variab
     }
 }
 
-static void parse_config_desktop(state_t *s, config_t *cfg, config_setting_t *mon, int i)
+static void parse_config_desktop(state_t *s, config_setting_t *mon, int i)
 {
     const char *tmp;
     config_setting_lookup_string(mon, "mon", &tmp);
@@ -261,29 +261,29 @@ static void parse_config_desktops(state_t *s, config_t *cfg)
         int count = config_setting_length(desktops);
         for (int i = 0; i < count; ++i) {
             config_setting_t *mon = config_setting_get_elem(desktops, i);
-            parse_config_desktop(s, cfg, mon, i);
+            parse_config_desktop(s, mon, i);
         }
     } else {
         parse_variable_err(s, "desktops");
     }
 }
 
-static void config_keybind_add_mod(state_t *s, uint16_t *mods, const char *mod)
+static void config_keybind_add_mod(uint16_t *mods, const char *mod)
 {
-    for (int j = 0; j < sizeof(mod_mapping) / sizeof(mod_mapping[0]); ++j) {
+    for (size_t j = 0; j < sizeof(mod_mapping) / sizeof(mod_mapping[0]); ++j) {
         if (strcmp(mod_mapping[j].name, mod) == 0) {
             *mods |= mod_mapping[j].mod;
         }
     }
 }
 
-static void parse_config_keybind(state_t *s, config_t *cfg, config_setting_t *keybind, int i)
+static void parse_config_keybind(state_t *s, config_setting_t *keybind, size_t i)
 {
     const char *key;
     if (!config_setting_lookup_string(keybind, "key", &key)) {
         parse_variable_err(s, "key");
     } else {
-        for (int j = 0; j < sizeof(key_mapping) / sizeof(key_mapping[0]); ++j) {
+        for (size_t j = 0; j < sizeof(key_mapping) / sizeof(key_mapping[0]); ++j) {
             if (strcmp(key_mapping[j].name, key) == 0) {
                 s->config->keybinds[i].key = key_mapping[j].keysym;
             }
@@ -296,7 +296,7 @@ static void parse_config_keybind(state_t *s, config_t *cfg, config_setting_t *ke
         int count = config_setting_length(mods);
         for (int j = 0; j < count; ++j) {
             const char *mod = config_setting_get_string_elem(mods, j);
-            config_keybind_add_mod(s, &s->config->keybinds[i].mods, mod);
+            config_keybind_add_mod(&s->config->keybinds[i].mods, mod);
         }
     } else {
         parse_variable_err(s, "mods");
@@ -311,7 +311,7 @@ static void parse_config_keybind(state_t *s, config_t *cfg, config_setting_t *ke
     if (!config_setting_lookup_string(keybind, "action", &action)) {
         parse_variable_err(s, "action");
     } else {
-        for (int j = 0; j < sizeof(callback_mapping) / sizeof(callback_mapping[0]); ++j) {
+        for (size_t j = 0; j < sizeof(callback_mapping) / sizeof(callback_mapping[0]); ++j) {
             if (strcmp(callback_mapping[j].name, action) == 0) {
                 s->config->keybinds[i].callback = callback_mapping[j].callback;
             }
@@ -333,7 +333,7 @@ static void parse_config_keybinds(state_t *s, config_t *cfg)
         int count = config_setting_length(keybinds);
         for (int i = 0; i < count; ++i) {
             config_setting_t *keybind = config_setting_get_elem(keybinds, i);
-            parse_config_keybind(s, cfg, keybind, i);
+            parse_config_keybind(s, keybind, i);
         }
     } else {
         parse_variable_err(s, "keybinds");
@@ -399,7 +399,7 @@ void parse_config_file(state_t *s)
     if (!config_lookup_string(&cfg, "default_layout", &default_layout)) {
         parse_variable_err(s, "default_layout");
     } else {
-        for (int i = 0; i < (sizeof(layout_mapping) / sizeof(layout_mapping[0])); ++i) {
+        for (size_t i = 0; i < (sizeof(layout_mapping) / sizeof(layout_mapping[0])); ++i) {
             if (strcmp(layout_mapping[i].name, default_layout) == 0) {
                 s->config->default_layout = layout_mapping[i].layout;
                 break;
@@ -424,7 +424,7 @@ void parse_config_file(state_t *s)
     if (!config_lookup_string(&cfg, "button_mod", &button_mod)) {
         parse_variable_err(s, "button_mod");
     } else {
-        for (int i = 0; i < (sizeof(mod_mapping) / sizeof(mod_mapping[0])); ++i) {
+        for (size_t i = 0; i < (sizeof(mod_mapping) / sizeof(mod_mapping[0])); ++i) {
             if (strcmp(mod_mapping[i].name, button_mod) == 0) {
                 s->config->button_mod = mod_mapping[i].mod;
                 break;
@@ -436,7 +436,7 @@ void parse_config_file(state_t *s)
     if (!config_lookup_string(&cfg, "move_button", &move_button)) {
         parse_variable_err(s, "move_button");
     } else {
-        for (int i = 0; i < (sizeof(button_mapping) / sizeof(button_mapping[0])); ++i) {
+        for (size_t i = 0; i < (sizeof(button_mapping) / sizeof(button_mapping[0])); ++i) {
             if (strcmp(button_mapping[i].name, move_button) == 0) {
                 s->config->move_button = button_mapping[i].button;
                 break;
@@ -448,7 +448,7 @@ void parse_config_file(state_t *s)
     if (!config_lookup_string(&cfg, "resize_button", &resize_button)) {
         parse_variable_err(s, "resize_button");
     } else {
-        for (int i = 0; i < (sizeof(button_mapping) / sizeof(button_mapping[0])); ++i) {
+        for (size_t i = 0; i < (sizeof(button_mapping) / sizeof(button_mapping[0])); ++i) {
             if (strcmp(button_mapping[i].name, resize_button) == 0) {
                 s->config->resize_button = button_mapping[i].button;
                 break;
