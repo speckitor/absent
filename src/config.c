@@ -1,8 +1,11 @@
 #include <X11/keysym.h>
+#include <X11/XF86keysym.h>
+
 #include <libconfig.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <xcb/xproto.h>
 
 #include "config.h"
 #include "keycallbacks.h"
@@ -12,6 +15,7 @@
 static const keyname_keysym_t key_mapping[] = {
     {"VoidSymbol", XK_VoidSymbol},
     {"BackSpace", XK_BackSpace},
+    {"Print", XK_Print},
     {"Tab", XK_Tab},
     {"Linefeed", XK_Linefeed},
     {"Clear", XK_Clear},
@@ -166,6 +170,46 @@ static const keyname_keysym_t key_mapping[] = {
     {"Super_R", XK_Super_R},
     {"Hyper_L", XK_Hyper_L},
     {"Hyper_R", XK_Hyper_R},
+    {"AudioLowerVolume", XF86XK_AudioLowerVolume},
+    {"AudioRaiseVolume", XF86XK_AudioRaiseVolume},
+    {"AudioMute", XF86XK_AudioMute},
+    {"AudioPlay", XF86XK_AudioPlay},
+    {"AudioStop", XF86XK_AudioStop},
+    {"AudioPrev", XF86XK_AudioPrev},
+    {"AudioNext", XF86XK_AudioNext},
+    {"AudioRecord", XF86XK_AudioRecord},
+    {"AudioRewind", XF86XK_AudioRewind},
+    {"AudioForward", XF86XK_AudioForward},
+    {"AudioPause", XF86XK_AudioPause},
+    {"LaunchMail", XF86XK_Mail},
+    {"LaunchMedia", XF86XK_AudioMedia},
+    {"LaunchHome", XF86XK_HomePage},
+    {"LaunchFavorites", XF86XK_Favorites},
+    {"LaunchSearch", XF86XK_Search},
+    {"BrightnessUp", XF86XK_MonBrightnessUp},
+    {"BrightnessDown", XF86XK_MonBrightnessDown},
+    {"ScreenSaver", XF86XK_ScreenSaver},
+    {"Sleep", XF86XK_Sleep},
+    {"PowerOff", XF86XK_PowerOff},
+    {"WakeUp", XF86XK_WakeUp},
+    {"Calculator", XF86XK_Calculator},
+    {"FileManager", XF86XK_Explorer},
+    {"Terminal", XF86XK_Terminal},
+    {"WWW", XF86XK_WWW},
+    {"Mail", XF86XK_Mail},
+    {"Battery", XF86XK_Battery},
+    {"Bluetooth", XF86XK_Bluetooth},
+    {"WLAN", XF86XK_WLAN},
+    {"TouchpadToggle", XF86XK_TouchpadToggle},
+    {"TouchpadOn", XF86XK_TouchpadOn},
+    {"TouchpadOff", XF86XK_TouchpadOff},
+    {"Eject", XF86XK_Eject},
+    {"RotateWindows", XF86XK_RotateWindows},
+    {"Close", XF86XK_Close},
+    {"AudioMicMute", XF86XK_AudioMicMute},
+    {"KbdBrightnessUp", XF86XK_KbdBrightnessUp},
+    {"KbdBrightnessDown", XF86XK_KbdBrightnessDown},
+    {"KbdLightOnOff", XF86XK_KbdLightOnOff}
 };
 
 static const buttonname_buttonnum_t button_mapping[] = {
@@ -270,7 +314,8 @@ static void parse_config_desktops(state_t *s, config_t *cfg)
 
 static void config_keybind_add_mod(uint16_t *mods, const char *mod)
 {
-    for (size_t j = 0; j < sizeof(mod_mapping) / sizeof(mod_mapping[0]); ++j) {
+    size_t c = 0;
+    for (size_t j = 0; j < sizeof(mod_mapping) / sizeof(mod_mapping[0]); ++j, ++c) {
         if (strcmp(mod_mapping[j].name, mod) == 0) {
             *mods |= mod_mapping[j].mod;
         }
@@ -299,12 +344,7 @@ static void parse_config_keybind(state_t *s, config_setting_t *keybind, size_t i
             config_keybind_add_mod(&s->config->keybinds[i].mods, mod);
         }
     } else {
-        parse_variable_err(s, "mods");
-    }
-
-    if (s->config->keybinds[i].mods == 0) {
-        log_msg(s, "No modifiers provided\n");
-        exit(EXIT_FAILURE);
+        s->config->keybinds[i].mods = XCB_MOD_MASK_ANY;
     }
 
     const char *action;

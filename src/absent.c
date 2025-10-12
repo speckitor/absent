@@ -28,7 +28,6 @@ void grab_key(state_t *s, size_t i)
     }
     uint16_t mod = s->config->keybinds[i].mods;
     optional_modifiers_t m = s->opt_mods;
-
     if (m.num_lock != XCB_NO_SYMBOL && m.caps_lock != XCB_NO_SYMBOL && m.scroll_lock != XCB_NO_SYMBOL) {
         GRAB_KEY(keycode, mod | m.num_lock | m.caps_lock | m.scroll_lock);
     }
