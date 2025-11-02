@@ -19,7 +19,7 @@ compile:
 install: compile
 	install -Dm755 $(BINARY) $(BIN_DIR)/$(BINARY)
 	install -Dm644 $(CFG_FILES)/$(DESKTOP) $(DESKTOP_DIR)/$(DESKTOP)
-	install -Dm644 $(CFG_FILES)/$(CFG) $(GLOBAL_CFG_DIR)/$(CFG)
+	install -Dm644 $(CFG_FILES)/$(CFG) $(CFG_DIR)/$(CFG)
 
 uninstall:
 	rm -f $(BIN_DIR)/$(BINARY)

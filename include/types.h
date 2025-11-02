@@ -1,10 +1,5 @@
-#pragma once
-
-#include <stdbool.h>
-#include <stdio.h>
-
-#include <xcb/xcb.h>
-#include <xcb/xproto.h>
+#ifndef TYPES_H_
+#define TYPES_H_
 
 typedef struct state_t state_t;
 
@@ -212,3 +207,5 @@ struct state_t {
 
     optional_modifiers_t opt_mods;
 };
+
+#endif // TYPES_H_

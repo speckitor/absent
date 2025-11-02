@@ -1,9 +1,5 @@
-#pragma once
-
-#include <xcb/xcb.h>
-#include <xcb/xcb_icccm.h>
-
-#include "types.h"
+#ifndef CLIENTS_H_
+#define CLIENTS_H_
 
 void client_create(state_t *s, xcb_window_t wid);
 void client_kill(state_t *s, client_t *cl);
@@ -22,3 +18,5 @@ void client_focus(state_t *s, client_t *cl);
 
 int client_contains_cursor(state_t *s, client_t *cl);
 void clients_update_ewmh(state_t *s);
+
+#endif // CLIENTS_H_

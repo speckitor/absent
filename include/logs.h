@@ -1,9 +1,8 @@
-#pragma once
-
-#include <stdio.h>
-
-#include "types.h"
+#ifndef LOGS_H_
+#define LOGS_H_
 
 int log_init(state_t *s, const char *path);
 void log_close(state_t *s);
 void log_msg(state_t *s, const char *fmt, ...);
+
+#endif // LOGS_H_

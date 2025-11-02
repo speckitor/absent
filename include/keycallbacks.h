@@ -1,9 +1,5 @@
-#pragma once
-
-#include <xcb/xcb.h>
-#include <xcb/xproto.h>
-
-#include "types.h"
+#ifndef KEYCALLBACKS_H_
+#define KEYCALLBACKS_H_
 
 void run(state_t *s, const char *param);
 
@@ -28,3 +24,5 @@ void killclient(state_t *s, const char *param);
 
 void killwm(state_t *s, const char *param);
 void restartwm(state_t *s, const char *param);
+
+#endif // KEYCALLBACKS_H_
