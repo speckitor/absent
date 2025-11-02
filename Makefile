@@ -24,7 +24,7 @@ install: compile
 uninstall:
 	rm -f $(BIN_DIR)/$(BINARY)
 	rm -f $(DESKTOP_DIR)/$(DESKTOP)
-	rm -f $(GLOBAL_CFG_DIR)/$(CFG)
+	rm -f $(CFG_DIR)/$(CFG)
 
 clean:
 	rm -f $(BINARY)
