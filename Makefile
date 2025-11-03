@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra -I./include/
+CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra
 LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr -lconfig
 SRC_FILES = ./src/*
 

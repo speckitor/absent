@@ -1,6 +1,8 @@
 #ifndef KEYCALLBACKS_H_
 #define KEYCALLBACKS_H_
 
+#include "types.h"
+
 void run(state_t *s, const char *param);
 
 void cyclefocusdown(state_t *s, const char *param);

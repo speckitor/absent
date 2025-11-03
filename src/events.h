@@ -1,6 +1,8 @@
 #ifndef EVENTS_H_
 #define EVENTS_H_
 
+#include "types.h"
+
 void send_event(state_t *s, client_t *cl, xcb_atom_t protocol);
 
 void main_loop(state_t *s);
