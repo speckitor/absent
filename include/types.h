@@ -1,6 +1,12 @@
 #ifndef TYPES_H_
 #define TYPES_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+
+#include <xcb/xcb.h>
+
 typedef struct state_t state_t;
 
 typedef void (*keycallback_t)(state_t *s, const char *param);

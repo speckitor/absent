@@ -1,8 +1,8 @@
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <xcb/xproto.h>
+#include <xcb/xcb_icccm.h>
 
 #include "clients.h"
 #include "events.h"

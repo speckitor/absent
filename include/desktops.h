@@ -1,6 +1,8 @@
 #ifndef DESKTOPS_H_
 #define DESKTOPS_H_
 
+#include "types.h"
+
 void setup_desktop_names(state_t *s, monitor_t *mon);
 
 void switch_desktop(state_t *s, const char *name);

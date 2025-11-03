@@ -1,6 +1,10 @@
 #ifndef ABSENT_H_
 #define ABSENT_H_
 
+#include <xcb/xproto.h>
+
+#include "types.h"
+
 void grab_keys(state_t *s);
 state_t *setup();
 xcb_atom_t get_atom(state_t *s, char *name);
