@@ -343,8 +343,6 @@ static void parse_config_keybind(state_t *s, config_setting_t *keybind, size_t i
             const char *mod = config_setting_get_string_elem(mods, j);
             config_keybind_add_mod(&s->config->keybinds[i].mods, mod);
         }
-    } else {
-        s->config->keybinds[i].mods = XCB_MOD_MASK_ANY;
     }
 
     const char *action;
@@ -454,7 +452,7 @@ void parse_config_file(state_t *s)
     parse_config_int(s, &cfg, "border_width", &s->config->border_width);
     parse_config_int(s, &cfg, "focused_border_color", &s->config->focused_border_color);
     parse_config_int(s, &cfg, "unfocused_border_color", &s->config->unfocused_border_color);
-    parse_config_int(s, &cfg, "pointer_update_time", &s->config->pointer_update_time);
+    parse_config_int(s, &cfg, "pointer_update_time", (int *)&s->config->pointer_update_time);
 
     parse_config_float(s, &cfg, "main_window_area", &s->config->main_window_area);
 

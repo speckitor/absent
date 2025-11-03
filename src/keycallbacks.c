@@ -197,7 +197,7 @@ void resizemainwindow(state_t *s, const char *param)
     if (count_clients_on_desktop(s) > 1) {
         char sign;
         double percent;
-        sscanf(param, "%c%lf%", &sign, &percent);
+        sscanf(param, "%c%lf%%", &sign, &percent);
 
         percent /= 100.0;
 

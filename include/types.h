@@ -76,7 +76,7 @@ typedef struct {
     uint16_t button_mod;
     int move_button;
     int resize_button;
-    int pointer_update_time;
+    unsigned int pointer_update_time;
 
     desktop_config_t desktops[8];
     keybind_t keybinds[256];
