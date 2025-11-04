@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra
-LIBS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr -lconfig
+LDFLAGS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr -lconfig -I./include
 SRC_FILES = ./src/*
 
 CFG_FILES = ./config
@@ -14,7 +14,7 @@ CFG_DIR = /etc/absent
 all: compile
 
 compile: 
-	$(CC) -o $(BINARY) $(SRC_FILES) $(CFLAGS) $(LIBS)
+	$(CC) -o $(BINARY) $(SRC_FILES) $(CFLAGS) $(LDFLAGS)
 
 install: compile
 	install -Dm755 $(BINARY) $(BIN_DIR)/$(BINARY)
