@@ -1,32 +1,42 @@
-CC = gcc
-CFLAGS = -march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra
-LDFLAGS = -lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr -lconfig -I./include
-SRC_FILES = ./src/*
+CC=gcc
+CFLAGS=-march=native -Os -ffast-math -flto -fno-exceptions -funroll-loops -Wall -Wextra -I./include
+LDFLAGS=-lxcb -lxcb-util -lxcb-icccm -lxcb-keysyms -lxkbcommon -lxcb-cursor -lxcb-randr -lconfig
 
-CFG_FILES = ./config
-BIN_DIR = /usr/local/bin
-BINARY = absent
-DESKTOP = $(BINARY).desktop
-DESKTOP_DIR = /usr/share/xsessions
-CFG = $(BINARY).cfg
-CFG_DIR = /etc/absent
+SRC=src
+SRC_FILES=src/absent.c src/clients.c src/config.c src/desktops.c src/events.c src/keycallbacks.c src/keys.c src/layout.c src/logs.c src/monitors.c
+BUILD=build
+OBJS=$(patsubst src/%.c, $(BUILD)/%.o, $(SRC_FILES))
 
-all: compile
+CFG_FILES=./config
+BIN_DIR=/usr/local/bin
+BIN=$(BUILD)/absent
+DESKTOP=$(BIN).desktop
+DESKTOP_DIR=/usr/share/xsessions
+CFG=$(BIN).cfg
+CFG_DIR=/etc/absent
 
-compile: 
-	$(CC) -o $(BINARY) $(SRC_FILES) $(CFLAGS) $(LDFLAGS)
+all: $(BIN)
 
-install: compile
-	install -Dm755 $(BINARY) $(BIN_DIR)/$(BINARY)
+$(BUILD):
+	mkdir -p build
+
+$(BUILD)/%.o: $(SRC)/%.c
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+$(BIN): $(BUILD) $(OBJS)
+	$(CC) -o $(BIN) $(OBJS) $(LDFLAGS)
+
+install: $(BIN)
+	install -Dm755 $(BIN) $(BIN_DIR)/$(BIN)
 	install -Dm644 $(CFG_FILES)/$(DESKTOP) $(DESKTOP_DIR)/$(DESKTOP)
 	install -Dm644 $(CFG_FILES)/$(CFG) $(CFG_DIR)/$(CFG)
 
 uninstall:
-	rm -f $(BIN_DIR)/$(BINARY)
+	rm -f $(BIN_DIR)/$(BIN)
 	rm -f $(DESKTOP_DIR)/$(DESKTOP)
 	rm -f $(CFG_DIR)/$(CFG)
 
 clean:
-	rm -f $(BINARY)
+	rm -f $(BIN)
 
 .PHONY: all compile install uninstall clean
