@@ -37,6 +37,6 @@ uninstall:
 	rm -f $(CFG_DIR)/$(CFG)
 
 clean:
-	rm -f $(BIN)
+	rm -rf ./$(BUILD)
 
 .PHONY: all compile install uninstall clean
