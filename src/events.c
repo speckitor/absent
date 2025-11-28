@@ -166,7 +166,7 @@ static void key_press(state_t *s, xcb_generic_event_t *ev)
 
     xcb_timestamp_t current_time = e->time;
 
-    if ((current_time - s->lastkeypresstime) <= 50) {
+    if ((current_time - s->lastkeypresstime) <= 20) {
         return;
     }
 

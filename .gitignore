@@ -2,3 +2,4 @@ absent
 compile_commands.json
 .cache/
 build/*
+tags

@@ -20,7 +20,7 @@ typedef struct {
 
 typedef struct {
     char *monitor_name;
-    char *desktop_names[10];
+    char *desktop_names[9];
 } desktop_config_t;
 
 typedef enum {
@@ -79,7 +79,9 @@ typedef struct {
     unsigned int pointer_update_time;
 
     desktop_config_t desktops[8];
+    size_t md_count;
     keybind_t keybinds[256];
+    size_t kb_count;
 } wm_config_t;
 
 typedef struct monitor_t monitor_t;

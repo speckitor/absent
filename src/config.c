@@ -1,11 +1,13 @@
 #include <X11/keysym.h>
 #include <X11/XF86keysym.h>
 
-#include <libconfig.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <xcb/xproto.h>
+
+#define CFG_IMPLEMENTATION
+#include "cfg.h"
 
 #include "config.h"
 #include "keycallbacks.h"
@@ -249,66 +251,40 @@ static const cbname_cb_t callback_mapping[] = {
     {"restartwm", restartwm},
 };
 
-static void parse_variable_err(state_t *s, char *error_field)
+static void parse_error(state_t *s, const char *message)
 {
-    log_msg(s, "No '%s' setting in config file.\n", error_field);
+    log_msg(s, "%s", message);
     exit(EXIT_FAILURE);
 }
 
-static void parse_config_int(state_t *s, config_t *cfg, char *name, int *variable)
+static void parse_config_desktop(state_t *s, Cfg_Variable *mon, int i)
 {
-    if (!config_lookup_int(cfg, name, variable)) {
-        parse_variable_err(s, name);
-    }
-}
-
-static void parse_config_float(state_t *s, config_t *cfg, char *name, double *variable)
-{
-    if (!config_lookup_float(cfg, name, variable)) {
-        parse_variable_err(s, name);
-    }
-}
-
-static void parse_config_bool(state_t *s, config_t *cfg, char *name, int *variable)
-{
-    if (!config_lookup_bool(cfg, name, variable)) {
-        parse_variable_err(s, name);
-    }
-}
-
-static void parse_config_desktop(state_t *s, config_setting_t *mon, int i)
-{
-    const char *tmp;
-    config_setting_lookup_string(mon, "mon", &tmp);
-    if (!tmp) {
-        parse_variable_err(s, "mon");
-    } else {
+    char *tmp = cfg_get_string(mon, "mon");
+    if (tmp) {
         s->config->desktops[i].monitor_name = strdup(tmp);
+    } else {
+        parse_error(s, "No monitor name in config");
     }
 
-    config_setting_t *mon_desktops = config_setting_lookup(mon, "desktop_names");
+    Cfg_Variable *mon_desktops = cfg_get_array(mon, "desktop_names");
     if (mon_desktops) {
-        int count = config_setting_length(mon_desktops);
-        for (int j = 0; j < count; ++j) {
-            s->config->desktops[i].desktop_names[j] =
-                strdup(config_setting_get_string_elem(mon_desktops, j));
+        size_t count = cfg_get_context_len(mon_desktops);
+        for (size_t j = 0; j < count; ++j) {
+            s->config->desktops[i].desktop_names[j] = strdup(cfg_get_string_elem(mon_desktops, j));
         }
-    } else {
-        parse_variable_err(s, "desktop_names");
     }
 }
 
-static void parse_config_desktops(state_t *s, config_t *cfg)
+static void parse_config_desktops(state_t *s, Cfg_Variable *global)
 {
-    config_setting_t *desktops = config_lookup(cfg, "desktops");
+    Cfg_Variable *desktops = cfg_get_array(global, "desktops");
     if (desktops) {
-        int count = config_setting_length(desktops);
-        for (int i = 0; i < count; ++i) {
-            config_setting_t *mon = config_setting_get_elem(desktops, i);
-            parse_config_desktop(s, mon, i);
+        size_t count = cfg_get_context_len(desktops);
+        for (size_t i = 0; i < count; ++i) {
+            Cfg_Variable *mon = cfg_get_struct_elem(desktops, i);
+            if (mon) parse_config_desktop(s, mon, i);
         }
-    } else {
-        parse_variable_err(s, "desktops");
+        s->config->md_count = count;
     }
 }
 
@@ -322,32 +298,32 @@ static void config_keybind_add_mod(uint16_t *mods, const char *mod)
     }
 }
 
-static void parse_config_keybind(state_t *s, config_setting_t *keybind, size_t i)
+static void parse_config_keybind(state_t *s, Cfg_Variable *keybind, size_t i)
 {
-    const char *key;
-    if (!config_setting_lookup_string(keybind, "key", &key)) {
-        parse_variable_err(s, "key");
-    } else {
+    const char *key = cfg_get_string(keybind, "key");
+    if (key) {
         for (size_t j = 0; j < sizeof(key_mapping) / sizeof(key_mapping[0]); ++j) {
             if (strcmp(key_mapping[j].name, key) == 0) {
                 s->config->keybinds[i].key = key_mapping[j].keysym;
             }
         }
+    } else {
+        parse_error(s, "No key name in config");
     }
 
     s->config->keybinds[i].mods = 0;
-    config_setting_t *mods = config_setting_lookup(keybind, "mods");
+    Cfg_Variable *mods = cfg_get_array(keybind, "mods");
     if (mods) {
-        int count = config_setting_length(mods);
+        int count = cfg_get_context_len(mods);
         for (int j = 0; j < count; ++j) {
-            const char *mod = config_setting_get_string_elem(mods, j);
+            const char *mod = cfg_get_string_elem(mods, j);
             config_keybind_add_mod(&s->config->keybinds[i].mods, mod);
         }
     }
 
-    const char *action;
-    if (!config_setting_lookup_string(keybind, "action", &action)) {
-        parse_variable_err(s, "action");
+    const char *action = cfg_get_string(keybind, "action");
+    if (!action) {
+        parse_error(s, "No action in config");
     } else {
         for (size_t j = 0; j < sizeof(callback_mapping) / sizeof(callback_mapping[0]); ++j) {
             if (strcmp(callback_mapping[j].name, action) == 0) {
@@ -356,42 +332,38 @@ static void parse_config_keybind(state_t *s, config_setting_t *keybind, size_t i
         }
     }
 
-    const char *param;
-    if (!config_setting_lookup_string(keybind, "param", &param)) {
+    const char *param = cfg_get_string(keybind, "param");
+    if (!param) {
         s->config->keybinds[i].param = NULL;
     } else {
         s->config->keybinds[i].param = strdup(param);
     }
 }
 
-static void parse_config_keybinds(state_t *s, config_t *cfg)
+static void parse_config_keybinds(state_t *s, Cfg_Variable *global)
 {
-    config_setting_t *keybinds = config_lookup(cfg, "keybinds");
+    Cfg_Variable *keybinds = cfg_get_array(global, "keybinds");
     if (keybinds) {
-        int count = config_setting_length(keybinds);
-        for (int i = 0; i < count; ++i) {
-            config_setting_t *keybind = config_setting_get_elem(keybinds, i);
-            parse_config_keybind(s, keybind, i);
+        size_t count = cfg_get_context_len(keybinds);
+        for (size_t i = 0; i < count; ++i) {
+            Cfg_Variable *keybind = cfg_get_struct_elem(keybinds, i);
+            if (keybind) parse_config_keybind(s, keybind, i);
         }
+        s->config->kb_count = count;
     } else {
-        parse_variable_err(s, "keybinds");
+        parse_error(s, "No keybinds in config");
     }
 }
 
-/*
- * Shitty function, more fragments must
- * be extracted into separate functions.
- */
 void parse_config_file(state_t *s)
 {
-    s->config = calloc(1, sizeof(wm_config_t));
+    s->config = malloc(sizeof(wm_config_t));
     if (!s->config) {
-        perror("calloc");
+        perror("malloc");
         exit(EXIT_FAILURE);
     }
 
-    config_t cfg;
-    config_init(&cfg);
+    Cfg_Config *cfg = cfg_config_init();
 
     const char *home = getenv("HOME");
     char path[512];
@@ -399,43 +371,41 @@ void parse_config_file(state_t *s)
 
     if (home) {
         snprintf(path, sizeof(path), "%s/.config/absent/absent.cfg", home);
-        if (config_read_file(&cfg, path)) {
+        if (cfg_load_file(cfg, path) == 0) {
             loaded = true;
         } else {
-            log_msg(s, "Error reading home config at %s:%d - %s\n", config_error_file(&cfg),
-                    config_error_line(&cfg), config_error_text(&cfg));
+            log_msg(s, "Local config parsing error. %s", cfg_err_message(cfg));
         }
     }
 
     if (!loaded) {
+        cfg_config_deinit(cfg);
+        cfg = cfg_config_init();
         const char *etcpath = "/etc/absent/absent.cfg";
-        if (config_read_file(&cfg, etcpath)) {
+        if (cfg_load_file(cfg, etcpath) == CFG_ERROR_NONE) {
             loaded = true;
         } else {
-            log_msg(s, "Error reading home config at %s:%d - %s\n", config_error_file(&cfg),
-                    config_error_line(&cfg), config_error_text(&cfg));
+            log_msg(s, "Global config parsing error. %s", cfg_err_message(cfg));
         }
     }
 
     if (!loaded) {
-        config_destroy(&cfg);
+        cfg_config_deinit(cfg);
         exit(EXIT_FAILURE);
     }
 
-    const char *autostart;
-    if (!config_lookup_string(&cfg, "autostart", &autostart)) {
-        parse_variable_err(s, "autostart");
+    Cfg_Variable *global = cfg_global_context(cfg);
+
+    const char *autostart = cfg_get_string(global, "autostart");
+    if (!autostart) {
+        s->config->autostart = "";
     } else {
         s->config->autostart = strdup(autostart);
-        if (!s->config->autostart) {
-            perror("strdup error");
-            exit(EXIT_FAILURE);
-        }
     }
 
-    const char *default_layout;
-    if (!config_lookup_string(&cfg, "default_layout", &default_layout)) {
-        parse_variable_err(s, "default_layout");
+    const char *default_layout = cfg_get_string(global, "default_layout");
+    if (!default_layout) {
+        s->config->default_layout = TILED;
     } else {
         for (size_t i = 0; i < (sizeof(layout_mapping) / sizeof(layout_mapping[0])); ++i) {
             if (strcmp(layout_mapping[i].name, default_layout) == 0) {
@@ -445,22 +415,29 @@ void parse_config_file(state_t *s)
         }
     }
 
-    parse_config_int(s, &cfg, "screen_gap", &s->config->screen_gap);
-    parse_config_int(s, &cfg, "layout_gap", &s->config->layout_gap);
-    parse_config_int(s, &cfg, "min_window_width", &s->config->min_window_width);
-    parse_config_int(s, &cfg, "min_window_height", &s->config->min_window_height);
-    parse_config_int(s, &cfg, "border_width", &s->config->border_width);
-    parse_config_int(s, &cfg, "focused_border_color", &s->config->focused_border_color);
-    parse_config_int(s, &cfg, "unfocused_border_color", &s->config->unfocused_border_color);
-    parse_config_int(s, &cfg, "pointer_update_time", (int *)&s->config->pointer_update_time);
+    s->config->screen_gap = cfg_get_int(global, "screen_gap");
+    s->config->layout_gap = cfg_get_int(global, "layout_gap");
+    s->config->min_window_width = cfg_get_int(global, "min_window_width");
+    s->config->min_window_height = cfg_get_int(global, "min_window_height");
+    s->config->border_width = cfg_get_int(global, "border_width");
 
-    parse_config_float(s, &cfg, "main_window_area", &s->config->main_window_area);
+    const char *fbc = cfg_get_string(global, "focused_border_color");
+    s->config->focused_border_color = (int)strtol(fbc, NULL, 16);
 
-    parse_config_bool(s, &cfg, "set_new_window_main", &s->config->set_new_window_main);
+    const char *ufbc = cfg_get_string(global, "unfocused_border_color");
+    s->config->unfocused_border_color = (int)strtol(ufbc, NULL, 16);
 
-    const char *button_mod;
-    if (!config_lookup_string(&cfg, "button_mod", &button_mod)) {
-        parse_variable_err(s, "button_mod");
+    int put = cfg_get_int(global, "pointer_update_time");
+    s->config->pointer_update_time = put > 0 ? put : 10;
+
+    double mwa = cfg_get_double(global, "main_window_area");
+    s->config->main_window_area = mwa > 0.0 && mwa < 1.0 ? mwa : 0.5;
+    
+    s->config->set_new_window_main = cfg_get_bool(global, "set_new_window_main");
+
+    const char *button_mod = cfg_get_string(global, "button_mod");
+    if (!button_mod) {
+        s->config->button_mod = XCB_MOD_MASK_4;
     } else {
         for (size_t i = 0; i < (sizeof(mod_mapping) / sizeof(mod_mapping[0])); ++i) {
             if (strcmp(mod_mapping[i].name, button_mod) == 0) {
@@ -470,9 +447,9 @@ void parse_config_file(state_t *s)
         }
     }
 
-    const char *move_button;
-    if (!config_lookup_string(&cfg, "move_button", &move_button)) {
-        parse_variable_err(s, "move_button");
+    const char *move_button = cfg_get_string(global, "move_button");
+    if (!move_button) {
+        s->config->move_button = 1;
     } else {
         for (size_t i = 0; i < (sizeof(button_mapping) / sizeof(button_mapping[0])); ++i) {
             if (strcmp(button_mapping[i].name, move_button) == 0) {
@@ -482,9 +459,9 @@ void parse_config_file(state_t *s)
         }
     }
 
-    const char *resize_button;
-    if (!config_lookup_string(&cfg, "resize_button", &resize_button)) {
-        parse_variable_err(s, "resize_button");
+    const char *resize_button = cfg_get_string(global, "resize_button");
+    if (!resize_button) {
+        s->config->resize_button = 2;
     } else {
         for (size_t i = 0; i < (sizeof(button_mapping) / sizeof(button_mapping[0])); ++i) {
             if (strcmp(button_mapping[i].name, resize_button) == 0) {
@@ -494,8 +471,10 @@ void parse_config_file(state_t *s)
         }
     }
 
-    parse_config_desktops(s, &cfg);
-    parse_config_keybinds(s, &cfg);
+    parse_config_desktops(s, global);
+    parse_config_keybinds(s, global);
 
-    config_destroy(&cfg);
+    cfg_config_deinit(cfg);
+
+    log_msg(s, "Config loaded");
 }

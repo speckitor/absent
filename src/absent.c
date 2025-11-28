@@ -129,7 +129,7 @@ state_t *setup()
 
     if (strlen(s->config->autostart) > 0) {
         if (fork() == 0) {
-            execl("/bin/sh", "sh", "-c", s->config->autostart, (char *)NULL);
+            execl("/bin/sh", "sh", "-c", s->config->autostart, NULL);
             _exit(EXIT_FAILURE);
         }
     }
@@ -137,7 +137,7 @@ state_t *setup()
     monitors_setup(s);
     s->monitor_focus = monitor_contains_cursor(s);
 
-    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP],XCB_ATOM_CARDINAL, 32, 1,
+    xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_CURRENT_DESKTOP], XCB_ATOM_CARDINAL, 32, 1,
                         &s->monitor_focus->desktop_id);
 
     xcb_change_property(s->c, XCB_PROP_MODE_REPLACE, s->root, s->ewmh[EWMH_NUMBER_OF_DESKTOPS],
@@ -208,15 +208,17 @@ void setup_atoms(state_t *s)
 
 void clean_config(state_t *s)
 {
+    log_msg(s, "Cleaning config");
     free(s->config->autostart);
     s->config->autostart = NULL;
 
-    for (int i = 0; i < 8; ++i) {
+    log_msg(s, "Free monitors");
+    for (size_t i = 0; i < s->config->md_count; ++i) {
         if (s->config->desktops[i].monitor_name) {
             free(s->config->desktops[i].monitor_name);
             s->config->desktops[i].monitor_name = NULL;
-            for (int j = 0; j < 10; ++j) {
-                if (s->config->desktops[i].desktop_names[j]) {
+            for (int j = 0; j < 9; ++j) {
+                if (s->config->desktops[i].desktop_names[j] != NULL) {
                     free(s->config->desktops[i].desktop_names[j]);
                     s->config->desktops[i].desktop_names[j] = NULL;
                 }
@@ -224,15 +226,18 @@ void clean_config(state_t *s)
         }
     }
 
-    for (int i = 0; i < 256; ++i) {
-        if (s->config->keybinds[i].param) {
+    log_msg(s, "Free keybinds");
+    for (size_t i = 0; i < s->config->kb_count; ++i) {
+        if (s->config->keybinds[i].param != NULL) {
             free(s->config->keybinds[i].param);
             s->config->keybinds[i].param = NULL;
         }
     }
 
-    free(s->config);
+    log_msg(s, "Free config");
+    if (s->config != NULL) free(s->config);
     s->config = NULL;
+    log_msg(s, "Config cleaned");
 }
 
 void clean(state_t *s)

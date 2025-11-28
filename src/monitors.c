@@ -54,7 +54,7 @@ void monitors_setup(state_t *s)
 
         const char *monitor_name = (const char *)xcb_randr_get_output_info_name(output_reply);
 
-        monitor_t *monitor = calloc(1, sizeof(monitor_t));
+        monitor_t *monitor = malloc(sizeof(monitor_t));
 
         monitor->padding.top = s->config->screen_gap;
         monitor->padding.left = s->config->screen_gap;
