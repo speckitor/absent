@@ -1,6 +1,5 @@
 /*
- *  cfg.h version 0.2.0
- *  git repo - https://git.speckitor.ru/speckitor/cfg.h
+ *  cfg.h - v0.2.0 - https://codeberg.org/speckitor/cfg.h
  *
  *  MIT License
  *
