@@ -15,7 +15,7 @@ DESKTOP_DIR=/usr/share/xsessions
 CFG=$(BIN).cfg
 CFG_DIR=/etc/absent
 
-all: $(BIN)
+all: $(BUILD)/$(BIN)
 
 $(BUILD):
 	mkdir -p build
@@ -23,10 +23,10 @@ $(BUILD):
 $(BUILD)/%.o: $(SRC)/%.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-$(BIN): $(BUILD) $(OBJS)
+$(BUILD)/$(BIN): $(BUILD) $(OBJS)
 	$(CC) -o $(BUILD)/$(BIN) $(OBJS) $(LDFLAGS)
 
-install: $(BIN)
+install: $(BUILD)/$(BIN)
 	install -Dm755 $(BUILD)/$(BIN) $(BIN_DIR)/$(BIN)
 	install -Dm644 $(CFG_FILES)/$(DESKTOP) $(DESKTOP_DIR)/$(DESKTOP)
 	install -Dm644 $(CFG_FILES)/$(CFG) $(CFG_DIR)/$(CFG)
